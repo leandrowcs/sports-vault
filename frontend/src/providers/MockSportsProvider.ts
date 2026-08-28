@@ -1,0 +1,12 @@
+import type { League, SportEvent, Team } from '../types/sports'
+import type { SportsProvider } from './SportsProvider'
+const leagues: League[] = [
+  { id: 'premier-league', name: 'Premier League', country: 'Inglaterra', sport: 'football', season: '2026/27', color: '#5b21b6' }, { id: 'la-liga', name: 'LaLiga', country: 'Espanha', sport: 'football', season: '2026/27', color: '#ef4444' }, { id: 'champions-league', name: 'UEFA Champions League', country: 'Europa', sport: 'football', season: '2026/27', color: '#1d4ed8' }, { id: 'nba', name: 'NBA', country: 'Estados Unidos', sport: 'basketball', season: '2026/27', color: '#ea580c' },
+]
+const teams: Team[] = [
+  { id: 'arsenal', name: 'Arsenal', shortName: 'ARS', leagueId: 'premier-league', city: 'Londres', color: '#dc2626' }, { id: 'liverpool', name: 'Liverpool', shortName: 'LIV', leagueId: 'premier-league', city: 'Liverpool', color: '#be123c' }, { id: 'realmadrid', name: 'Real Madrid', shortName: 'RMA', leagueId: 'la-liga', city: 'Madrid', color: '#1d4ed8' }, { id: 'barcelona', name: 'Barcelona', shortName: 'BAR', leagueId: 'la-liga', city: 'Barcelona', color: '#b91c1c' }, { id: 'psg', name: 'Paris Saint-Germain', shortName: 'PSG', leagueId: 'champions-league', city: 'Paris', color: '#1d4ed8' }, { id: 'bayern', name: 'Bayern Munich', shortName: 'BAY', leagueId: 'champions-league', city: 'Munique', color: '#dc2626' }, { id: 'celtics', name: 'Boston Celtics', shortName: 'BOS', leagueId: 'nba', city: 'Boston', color: '#15803d' }, { id: 'lakers', name: 'Los Angeles Lakers', shortName: 'LAL', leagueId: 'nba', city: 'Los Angeles', color: '#7e22ce' },
+]
+const events: SportEvent[] = [
+  { id: 'event-1', leagueId: 'premier-league', homeTeamId: 'arsenal', awayTeamId: 'liverpool', startsAt: '2026-08-28T16:30:00Z', status: 'scheduled', venue: 'Emirates Stadium' }, { id: 'event-2', leagueId: 'la-liga', homeTeamId: 'realmadrid', awayTeamId: 'barcelona', startsAt: '2026-08-29T19:00:00Z', status: 'scheduled', venue: 'Santiago Bernabeu' }, { id: 'event-3', leagueId: 'nba', homeTeamId: 'celtics', awayTeamId: 'lakers', startsAt: '2026-08-30T23:30:00Z', status: 'scheduled', venue: 'TD Garden' }, { id: 'event-4', leagueId: 'champions-league', homeTeamId: 'psg', awayTeamId: 'bayern', startsAt: '2026-08-26T19:00:00Z', status: 'finished', venue: 'Parc des Princes', homeScore: 2, awayScore: 1 },
+]
+export const mockSportsProvider: SportsProvider = { async getLeagues() { return leagues }, async getTeams() { return teams }, async getEvents() { return events } }
