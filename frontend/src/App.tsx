@@ -7,6 +7,7 @@ import {
   Bell,
   Bot,
   CalendarDays,
+  Check,
   ChevronRight,
   CircleUserRound,
   Compass,
@@ -18,8 +19,11 @@ import {
   Medal,
   Menu,
   MoreVertical,
+  Plus,
   Shield,
   Search,
+  Share2,
+  SlidersHorizontal,
   Sparkles,
   Star,
   Trophy,
@@ -65,6 +69,7 @@ function App() {
   const [gameSport, setGameSport] = useState<"all" | "football" | "basketball" | "american_football">("all");
   const [gameStatus, setGameStatus] = useState<"all" | "scheduled" | "live" | "finished">("all");
   const [teamPage, setTeamPage] = useState<Team | null>(null);
+  const [playerPage, setPlayerPage] = useState<Player | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<SportEvent | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -106,6 +111,7 @@ function App() {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        setPlayerPage(null);
         setTeamPage(null);
         setSelectedTeam(null);
         setSelectedEvent(null);
@@ -222,7 +228,7 @@ function App() {
         </div>
       </aside>
       <main className="content">
-        {!teamPage && <header className="topbar">
+        {!teamPage && !playerPage && <header className="topbar">
           <div>
             <p className="eyebrow">SEU PAINEL ESPORTIVO</p>
             <h1>
@@ -259,7 +265,29 @@ function App() {
             {authError ?? vaultError}
           </p>
         )}
-        {teamPage ? (
+        {playerPage ? (
+          <PlayerVaultPage
+            player={playerPage}
+            team={team(playerPage.teamId)}
+            league={league(team(playerPage.teamId).leagueId)}
+            onBack={() => setPlayerPage(null)}
+            onOpenGames={() => {
+              setPlayerPage(null);
+              setTeamPage(null);
+              setView("games");
+            }}
+            onOpenVault={() => {
+              setPlayerPage(null);
+              setTeamPage(null);
+              setView("vault");
+            }}
+            onOpenSearch={() => {
+              setPlayerPage(null);
+              setTeamPage(null);
+              setView("search");
+            }}
+          />
+        ) : teamPage ? (
           <TeamVaultPage
             team={teamPage}
             league={league(teamPage.leagueId)}
@@ -282,7 +310,7 @@ function App() {
               setTeamPage(null);
               setView("search");
             }}
-            onSelectPlayer={setSelectedPlayer}
+            onSelectPlayer={setPlayerPage}
           />
         ) : view === "home" && (
           <VaultFeedHome
@@ -408,7 +436,11 @@ function App() {
           teams={data.teams}
           getTeam={team}
           getLeague={league}
-          onSelectPlayer={setSelectedPlayer}
+          onSelectPlayer={(player) => {
+            setSelectedTeam(null);
+            setSelectedEvent(null);
+            setPlayerPage(player);
+          }}
           onCompare={(teamAId, teamBId) => setHeadToHead({ teamAId, teamBId })}
           onClose={() => {
             setSelectedTeam(null);
@@ -440,6 +472,11 @@ const onboardingSports: { id: SportCode; label: string }[] = [
   { id: "basketball", label: "NBA" },
   { id: "american_football", label: "NFL" },
 ];
+const sportDescriptions: Record<SportCode, string> = {
+  american_football: "Playoffs & Live Ops",
+  basketball: "Conferências & Stats",
+  football: "UCL & Brasileirão",
+};
 function OnboardingScreen({
   leagues,
   teams,
@@ -483,83 +520,178 @@ function OnboardingScreen({
     return `${item.name} ${item.city} ${competition.name}`.toLowerCase().includes(normalizedQuery);
   });
   const trendingPlayers = players.slice(0, 4);
+  const selectedCount = selectedTeamIds.size + selectedSports.size;
 
   return (
     <div className="onboarding-screen">
-      <div className="onboarding-content">
-        <p className="eyebrow">CUSTOMIZE SEU VAULT</p>
-        <h1>Escolha seus times e ligas</h1>
-        <p className="onboarding-copy">
-          Selecione as modalidades e times para calibrar seu feed.
-        </p>
-        <div className="sport-toggle-group">
-          {onboardingSports.map((option) => (
-            <button
-              key={option.id}
-              className={selectedSports.has(option.id) ? "sport-toggle active" : "sport-toggle"}
-              onClick={() => toggleSport(option.id)}
-            >
-              {option.label}
-            </button>
-          ))}
+      <div className="onboarding-aura primary" />
+      <div className="onboarding-aura secondary" />
+      <header className="onboarding-header">
+        <div className="onboarding-header-row">
+          <div className="step-pill">
+            <span />
+            Passo 1 de 3
+          </div>
+          <button type="button" onClick={() => onFinish([])}>
+            Pular
+          </button>
         </div>
-        <label className="search-box onboarding-search">
-          <Search size={20} />
+        <div className="onboarding-progress" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      </header>
+      <div className="onboarding-content">
+        <h1>
+          Construa o seu <span>Sports Vault</span>
+        </h1>
+        <p className="onboarding-copy">
+          Escolha os esportes, times e atletas para um feed de dados 100% sob medida.
+        </p>
+
+        <section className="onboarding-section">
+          <div className="onboarding-section-title">
+            <span>Modalidades Principais</span>
+            <b>{selectedSports.size} ativas</b>
+          </div>
+          <div className="sport-card-grid">
+            {onboardingSports.map((option) => (
+              <SportChoiceCard
+                key={option.id}
+                active={selectedSports.has(option.id)}
+                label={option.label}
+                description={sportDescriptions[option.id]}
+                onClick={() => toggleSport(option.id)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <label className="onboarding-search-box">
+          <Search size={18} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar time ou competição"
+            placeholder="Buscar times, franquias ou ligas..."
           />
+          <button type="button" aria-label="Filtros">
+            <SlidersHorizontal size={17} />
+          </button>
         </label>
-        <div className="team-grid">
-          {suggested.map((item) => {
-            const following = selectedTeamIds.has(item.id);
-            return (
-              <article key={item.id} className="team-card">
-                <div className="team-card-top">
-                  <span className="crest" style={{ backgroundColor: item.color }}>
-                    {item.shortName.slice(0, 2)}
-                  </span>
-                </div>
-                <p className="onboarding-team-name">{item.name}</p>
-                <p>{item.city}</p>
-                <button
-                  className={following ? "onboarding-follow following" : "onboarding-follow"}
-                  onClick={() => toggleTeamSelection(item.id)}
-                >
-                  {following ? "Seguindo" : "Adicionar"}
-                </button>
-              </article>
-            );
-          })}
-          {!suggested.length && (
-            <div className="empty-state">
-              <Search size={25} />
-              <h3>Nada encontrado.</h3>
-              <p>Ajuste os filtros de modalidade ou a busca.</p>
+
+        <section className="onboarding-section">
+          <div className="onboarding-section-title">
+            <div>
+              <i />
+              <h2>Times Sugeridos para Você</h2>
             </div>
-          )}
-        </div>
-        {trendingPlayers.length > 0 && (
-          <>
-            <h2 className="onboarding-subtitle">Em alta nas últimas 24h</h2>
-            <div className="trending-row">
-              {trendingPlayers.map((player) => (
-                <span key={player.id} className="trending-chip">
-                  {player.name}
-                </span>
-              ))}
+            <span>{selectedTeamIds.size} seguidos</span>
+          </div>
+          <div className="onboarding-team-grid">
+            {suggested.slice(0, 6).map((item) => (
+              <OnboardingTeamCard
+                key={item.id}
+                team={item}
+                league={leagueById(item.leagueId)}
+                selected={selectedTeamIds.has(item.id)}
+                onToggle={() => toggleTeamSelection(item.id)}
+              />
+            ))}
+            {!suggested.length && (
+              <div className="empty-state onboarding-empty">
+                <Search size={25} />
+                <h3>Nada encontrado.</h3>
+                <p>Ajuste os filtros de modalidade ou a busca.</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="onboarding-section onboarding-athletes-section">
+          <div className="onboarding-section-title">
+            <div>
+              <i />
+              <h2>Atletas em Alta</h2>
             </div>
-          </>
-        )}
+            <span>Radar 24h</span>
+          </div>
+          <div className="onboarding-athlete-list">
+            {trendingPlayers.length ? trendingPlayers.map((player, index) => (
+              <OnboardingAthleteRow
+                key={player.id}
+                player={player}
+                team={teams.find((item) => item.id === player.teamId)}
+                vaulted={index < 3}
+              />
+            )) : (
+              <div className="empty-state onboarding-empty">
+                <Search size={25} />
+                <h3>Nenhum atleta em alta.</h3>
+                <p>Escolha times para calibrar o radar.</p>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
       <div className="onboarding-bar">
-        <span>{selectedTeamIds.size} times selecionados</span>
-        <button className="primary-button" onClick={() => onFinish([...selectedTeamIds])}>
-          Continuar <ChevronRight size={17} />
+        <button className="onboarding-cta" onClick={() => onFinish([...selectedTeamIds])}>
+          <span>Entrar no Vault</span>
+          <b>{selectedCount} selecionados</b>
+          <ArrowRight size={19} />
         </button>
+        <p>Você poderá ajustar suas preferências e alertas a qualquer momento.</p>
       </div>
     </div>
+  );
+}
+function SportChoiceCard({ active, label, description, onClick }: { active: boolean; label: string; description: string; onClick: () => void }) {
+  return (
+    <button type="button" className={active ? "sport-choice-card active" : "sport-choice-card"} onClick={onClick}>
+      <div>
+        <span><Trophy size={18} /></span>
+        {active && <Check size={18} />}
+      </div>
+      <b>{label}</b>
+      <small>{description}</small>
+    </button>
+  );
+}
+function OnboardingTeamCard({ team, league, selected, onToggle }: { team: Team; league: League; selected: boolean; onToggle: () => void }) {
+  return (
+    <article className={selected ? "onboarding-team-card selected" : "onboarding-team-card"}>
+      <div>
+        <span style={{ backgroundColor: team.color }}>{team.shortName}</span>
+        <button type="button" onClick={onToggle} aria-label={selected ? `Remover ${team.name}` : `Adicionar ${team.name}`}>
+          {selected ? <><Check size={14} /><b>Seguindo</b></> : <Plus size={16} />}
+        </button>
+      </div>
+      <h3>{team.name}</h3>
+      <p>{league.name} · {league.country}</p>
+    </article>
+  );
+}
+function OnboardingAthleteRow({ player, team, vaulted }: { player: Player; team?: Team; vaulted: boolean }) {
+  const initials = player.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <article className={vaulted ? "onboarding-athlete-row vaulted" : "onboarding-athlete-row"}>
+      <div>
+        <span>{initials}</span>
+        <div>
+          <h3>{player.name}</h3>
+          <p>{team?.name ?? "Sports Vault"} · <b>{player.position}</b></p>
+        </div>
+      </div>
+      <button type="button">
+        {vaulted ? <><Check size={15} /><span>Vaulted</span></> : <><Plus size={15} /><span>Adicionar</span></>}
+      </button>
+    </article>
   );
 }
 function SectionTitle({
@@ -893,6 +1025,245 @@ function AnalysisCard({ tag, title, byline, tone }: { tag: string; title: string
       </div>
     </article>
   );
+}
+function PlayerVaultPage({
+  player,
+  team,
+  league,
+  onBack,
+  onOpenGames,
+  onOpenVault,
+  onOpenSearch,
+}: {
+  player: Player;
+  team: Team;
+  league: League;
+  onBack: () => void;
+  onOpenGames: () => void;
+  onOpenVault: () => void;
+  onOpenSearch: () => void;
+}) {
+  const [seasonIndex, setSeasonIndex] = useState(0);
+  const stats = player.seasons[seasonIndex] ?? player.seasons[0];
+  const marketValue = new Intl.NumberFormat("pt-BR", {
+    currency: "EUR",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(player.marketValueEUR);
+  const averageRating = stats?.recentRatings.length
+    ? stats.recentRatings.reduce((sum, rating) => sum + rating, 0) / stats.recentRatings.length
+    : 0;
+  const recentOpponents = ["ATM", "VAL", "BAR", "RSO", "BAY", "BVB"];
+  const metrics = stats
+    ? [
+        { icon: Trophy, label: league.sport === "basketball" ? "Pontos" : "Gols", note: "Top 3 club", value: stats.goals },
+        { icon: HandshakeIcon, label: "Assistências", note: "0.34/90m", value: stats.assists },
+        { icon: Activity, label: "Chutes no gol", note: "+0.12 vs média", value: stats.shotsOnTarget },
+        { icon: BoltIcon, label: "Dribles concl.", note: "#1 na liga", value: (stats.shotsOnTarget / Math.max(stats.appearances, 1)).toFixed(1) },
+      ]
+    : [];
+  const percentiles = stats
+    ? [
+        { label: "Aceleração & Explosão", value: Math.min(98, stats.percentiles.shotsOnTarget + 10), tone: "primary" },
+        { label: "Finalização & Gols", value: stats.percentiles.goals, tone: "primary" },
+        { label: "Criatividade & Chances Criadas", value: stats.percentiles.assists, tone: "secondary" },
+        { label: "Presença & Ritmo", value: stats.percentiles.appearances, tone: "muted" },
+      ]
+    : [];
+  const titleGroups = groupTitles(player.titles);
+
+  return (
+    <section className="player-vault-page" aria-label={`${player.name} Player Analytics`}>
+      <header className="player-vault-topbar">
+        <div>
+          <button onClick={onBack} aria-label="Voltar">
+            <ArrowLeft size={20} />
+          </button>
+          <span>Player Analytics</span>
+        </div>
+        <nav aria-label="Ações do atleta">
+          <button aria-label="Compartilhar">
+            <Share2 size={19} />
+          </button>
+          <button aria-label="Favoritar">
+            <Star size={19} fill="currentColor" />
+          </button>
+        </nav>
+      </header>
+
+      <section className="player-hero-card">
+        <span className="player-number-watermark">#{player.id.length + player.age % 10}</span>
+        <div className="player-avatar-card">
+          <CircleUserRound size={54} />
+          <b>{player.nationality.slice(0, 3).toUpperCase()}</b>
+        </div>
+        <div className="player-hero-info">
+          <span className="active-status"><i />Ativo • Titular</span>
+          <h1>{player.name}</h1>
+          <p>{team.name} • <b>{player.position}</b></p>
+          <div className="player-quick-facts">
+            <div>
+              <span>Valor mercado</span>
+              <b>{marketValue}</b>
+            </div>
+            <div>
+              <span>Idade</span>
+              <b>{player.age} anos</b>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <label className="season-filter">
+        <CalendarDays size={18} />
+        <select value={seasonIndex} onChange={(event) => setSeasonIndex(Number(event.target.value))}>
+          {player.seasons.map((season, index) => (
+            <option key={`${season.season}-${season.competitionId}`} value={index}>
+              {season.season} - Todas as Competições
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <section className="player-metrics-section">
+        <div className="player-section-header">
+          <h2>Métricas Principais (Temporada)</h2>
+          <span>Per 90 & Totais</span>
+        </div>
+        {stats ? (
+          <div className="player-metric-grid">
+            {metrics.map(({ icon: Icon, label, note, value }) => (
+              <article key={label} className="player-metric-card">
+                <header>
+                  <span>{label}</span>
+                  <Icon size={17} />
+                </header>
+                <strong>{value}</strong>
+                <small>{note}</small>
+              </article>
+            ))}
+            <article className="player-metric-card wide">
+              <div>
+                <span>Velocidade máxima registrada</span>
+                <strong>{(32 + stats.shotsOnTarget / 5).toFixed(1)} <small>km/h</small></strong>
+              </div>
+              <b>Top 1% sprint</b>
+            </article>
+          </div>
+        ) : (
+          <div className="empty-state compact-empty">
+            <BarChart3 size={25} />
+            <h3>Sem métricas disponíveis.</h3>
+            <p>Este atleta ainda não possui temporada cadastrada.</p>
+          </div>
+        )}
+      </section>
+
+      {stats && (
+        <>
+          <section className="player-panel recent-performance-panel">
+            <div className="player-panel-header">
+              <div>
+                <h2>Desempenho Recente</h2>
+                <p>Ratings nos últimos confrontos</p>
+              </div>
+              <strong>{averageRating.toFixed(2)} AVG</strong>
+            </div>
+            <div className="recent-rating-chart">
+              {stats.recentRatings.map((rating, index) => (
+                <div key={`${rating}-${index}`}>
+                  <span className={rating === Math.max(...stats.recentRatings) ? "peak" : ""}>{rating.toFixed(1)}</span>
+                  <b className={rating === Math.max(...stats.recentRatings) ? "peak" : ""} style={{ height: `${rating * 10}%` }} />
+                  <small>{recentOpponents[index % recentOpponents.length]}</small>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="player-panel percentile-panel">
+            <div className="player-section-header">
+              <h2>Percentis vs. Pares Globais</h2>
+              <span>Top Tier</span>
+            </div>
+            {percentiles.map((item) => (
+              <div key={item.label} className="player-percentile-row">
+                <div>
+                  <span>{item.label}</span>
+                  <b>{item.value}%</b>
+                </div>
+                <div className="player-percentile-track">
+                  <span className={item.tone} style={{ width: `${item.value}%` }} />
+                </div>
+              </div>
+            ))}
+          </section>
+        </>
+      )}
+
+      <section className="player-panel player-titles-panel">
+        <div className="player-panel-header">
+          <div>
+            <h2><Medal size={17} />Histórico de Títulos no Vault</h2>
+          </div>
+          <strong>{player.titles.length} troféus</strong>
+        </div>
+        {titleGroups.length ? (
+          <div className="player-title-grid">
+            {titleGroups.map((title) => (
+              <article key={title.label}>
+                <Trophy size={24} />
+                <b>{title.count}x</b>
+                <span>{title.label}</span>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="standing-empty">Nenhum título cadastrado.</p>
+        )}
+      </section>
+
+      <div className="vault-bottom-actions player-vault-bottom" aria-label="Navegação do perfil do atleta">
+        <button onClick={onOpenVault}>
+          <Shield size={20} />
+          Vault
+        </button>
+        <button onClick={onOpenGames}>
+          <Trophy size={20} />
+          Jogos
+        </button>
+        <button onClick={onOpenSearch}>
+          <Search size={20} />
+          Explorar
+        </button>
+        <button className="active">
+          <CircleUserRound size={20} />
+          Perfil
+        </button>
+      </div>
+    </section>
+  );
+}
+function groupTitles(titles: string[]) {
+  const normalized = titles.map((title) => {
+    if (title.toLowerCase().includes("champions")) return "UCL";
+    if (title.toLowerCase().includes("liga") || title.toLowerCase().includes("league")) return "Liga";
+    if (title.toLowerCase().includes("copa") || title.toLowerCase().includes("cup")) return "Copa";
+    return title.replace(/\s+\d{4}.*/, "");
+  });
+  return Object.entries(
+    normalized.reduce<Record<string, number>>((acc, title) => {
+      acc[title] = (acc[title] ?? 0) + 1;
+      return acc;
+    }, {}),
+  )
+    .slice(0, 3)
+    .map(([label, count]) => ({ count, label }));
+}
+function HandshakeIcon({ size }: { size: number }) {
+  return <Heart size={size} />;
+}
+function BoltIcon({ size }: { size: number }) {
+  return <Sparkles size={size} />;
 }
 function TeamVaultPage({
   team,
