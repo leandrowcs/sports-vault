@@ -7,9 +7,10 @@ service cloud.firestore {
     }
 
     function isValidVault(data) {
-      return data.keys().hasOnly(['teamIds'])
+      return data.keys().hasOnly(['teamIds', 'onboarded'])
         && data.teamIds is list
-        && data.teamIds.size() <= 200;
+        && data.teamIds.size() <= 200
+        && data.onboarded is bool;
     }
 
     match /users/{userId} {
