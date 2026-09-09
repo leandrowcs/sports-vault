@@ -31,17 +31,16 @@ const nbaLeague = {
   name: "NBA",
   country: "Estados Unidos",
   sport: "basketball",
-  season: process.env.SPORTS_API_NBA_SEASON ?? "2025",
+  season: process.env.SPORTS_API_NBA_SEASON ?? "2024",
   color: "#ea580c",
 };
 
 let cachedPayload;
 let cachedAt = 0;
 
+// API-SPORTS Free plan only serves seasons 2022-2024.
 function getCurrentFootballSeason() {
-  const date = new Date();
-  const month = date.getUTCMonth() + 1;
-  return String(month >= 7 ? date.getUTCFullYear() : date.getUTCFullYear() - 1);
+  return "2024";
 }
 
 function formatDate(date) {
