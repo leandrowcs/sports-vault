@@ -1,61 +1,20 @@
-const FOOTBALL_BASE_URL = "https://v3.football.api-sports.io";
-const NBA_BASE_URL = "https://v2.nba.api-sports.io";
-const NFL_BASE_URL = "https://v1.american-football.api-sports.io";
+const ESPN_BASE_URL = "https://site.api.espn.com/apis/site/v2/sports";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-const footballLeagues = [
-  {
-    apiId: 39,
-    id: "football-39",
-    name: "Premier League",
-    country: "Inglaterra",
-    color: "#5b21b6",
-  },
-  {
-    apiId: 140,
-    id: "football-140",
-    name: "LaLiga",
-    country: "Espanha",
-    color: "#ef4444",
-  },
-  {
-    apiId: 2,
-    id: "football-2",
-    name: "UEFA Champions League",
-    country: "Europa",
-    color: "#1d4ed8",
-  },
+// ESPN's public scoreboard/teams endpoints require no API key and serve the current season.
+const leagueDefs = [
+  { id: "premier-league", name: "Premier League", country: "Inglaterra", sport: "football", espnSport: "soccer", espnLeague: "eng.1", season: "2026/27", color: "#5b21b6" },
+  { id: "la-liga", name: "LaLiga", country: "Espanha", sport: "football", espnSport: "soccer", espnLeague: "esp.1", season: "2026/27", color: "#ef4444" },
+  { id: "champions-league", name: "UEFA Champions League", country: "Europa", sport: "football", espnSport: "soccer", espnLeague: "uefa.champions", season: "2026/27", color: "#1d4ed8" },
+  { id: "nba", name: "NBA", country: "Estados Unidos", sport: "basketball", espnSport: "basketball", espnLeague: "nba", season: "2026/27", color: "#ea580c" },
+  { id: "nfl", name: "NFL", country: "Estados Unidos", sport: "american_football", espnSport: "football", espnLeague: "nfl", season: "2026/27", color: "#7c2d12" },
 ];
-
-const nbaLeague = {
-  id: "nba",
-  name: "NBA",
-  country: "Estados Unidos",
-  sport: "basketball",
-  season: process.env.SPORTS_API_NBA_SEASON ?? "2024",
-  color: "#ea580c",
-};
-
-const nflLeague = {
-  apiId: 1,
-  id: "nfl",
-  name: "NFL",
-  country: "Estados Unidos",
-  sport: "american_football",
-  season: process.env.SPORTS_API_NFL_SEASON ?? "2024",
-  color: "#7c2d12",
-};
 
 let cachedPayload;
 let cachedAt = 0;
 
-// API-SPORTS Free plan only serves seasons 2022-2024.
-function getCurrentFootballSeason() {
-  return "2024";
-}
-
 function formatDate(date) {
-  return date.toISOString().slice(0, 10);
+  return date.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
 function addDays(date, days) {
@@ -64,225 +23,200 @@ function addDays(date, days) {
   return next;
 }
 
-function slugify(value) {
-  return String(value)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function colorFromId(value) {
-  const palette = [
-    "#2563eb",
-    "#dc2626",
-    "#15803d",
-    "#7c3aed",
-    "#0f766e",
-    "#be123c",
-    "#ca8a04",
-    "#0369a1",
-  ];
-  const index = [...String(value)].reduce((sum, char) => sum + char.charCodeAt(0), 0) % palette.length;
-  return palette[index];
-}
-
-async function apiSportsFetch(baseUrl, path, apiKey) {
-  const response = await fetch(`${baseUrl}${path}`, {
-    headers: {
-      "x-apisports-key": apiKey,
-    },
-  });
+async function espnFetch(path) {
+  const response = await fetch(`${ESPN_BASE_URL}${path}`);
 
   if (!response.ok) {
-    throw new Error(`API-SPORTS request failed: ${response.status}`);
+    throw new Error(`ESPN request failed: ${response.status}`);
   }
 
-  const payload = await response.json();
-  if (payload.errors && Object.keys(payload.errors).length > 0) {
-    throw new Error("API-SPORTS returned an error payload");
-  }
-
-  return Array.isArray(payload.response) ? payload.response : [];
+  return response.json();
 }
 
-function normalizeFootballTeam(item, leagueId) {
-  const team = item.team;
-  if (!team?.id || !team?.name) return null;
+function normalizeTeam(teamItem, leagueId) {
+  const team = teamItem.team ?? teamItem;
+  if (!team?.id || !team?.displayName) return null;
 
   return {
-    id: `football-${team.id}`,
-    name: team.name,
-    shortName: team.code || team.name.slice(0, 3).toUpperCase(),
+    id: `${leagueId}-${team.id}`,
+    name: team.displayName,
+    shortName: team.abbreviation || team.displayName.slice(0, 3).toUpperCase(),
     leagueId,
-    city: item.venue?.city || item.team?.country || "N/D",
-    color: colorFromId(team.id),
+    city: team.location || "N/D",
+    color: team.color ? `#${team.color}` : "#2563eb",
   };
 }
 
-function normalizeNbaTeam(item) {
-  if (!item?.id || !item?.name || item.allStar || item.nbaFranchise === false) return null;
+function mapStatus(state) {
+  if (state === "post") return "finished";
+  if (state === "in") return "live";
+  return "scheduled";
+}
+
+function getStat(categories, categoryName, statName) {
+  const category = categories?.find((item) => item.name === categoryName);
+  const stat = category?.stats?.find((item) => item.name === statName);
+  return stat?.value ?? 0;
+}
+
+function normalizePlayer(athlete, teamId, leagueId) {
+  if (!athlete?.id || !athlete?.displayName) return null;
+
+  const categories = athlete.statistics?.splits?.categories;
 
   return {
-    id: `nba-${item.id}`,
-    name: item.name,
-    shortName: item.code || item.nickname || item.name.slice(0, 3).toUpperCase(),
-    leagueId: nbaLeague.id,
-    city: item.city || "N/D",
-    color: colorFromId(item.id),
+    id: `${leagueId}-${athlete.id}`,
+    teamId,
+    name: athlete.displayName,
+    position: athlete.position?.displayName || "N/D",
+    age: athlete.age ?? 0,
+    nationality: athlete.citizenship || "N/D",
+    appearances: getStat(categories, "general", "appearances"),
+    goals: getStat(categories, "offensive", "totalGoals"),
+    assists: getStat(categories, "offensive", "goalAssists"),
+    shotsOnTarget: getStat(categories, "offensive", "shotsOnTarget"),
+    foulsCommitted: getStat(categories, "general", "foulsCommitted"),
+    yellowCards: getStat(categories, "general", "yellowCards"),
   };
 }
 
-function normalizeFootballEvent(item) {
-  const fixture = item.fixture;
-  const league = item.league;
-  const teams = item.teams;
-  if (!fixture?.id || !fixture?.date || !league?.id || !teams?.home?.id || !teams?.away?.id) return null;
+function percentileRank(values, value) {
+  if (!values.length) return 0;
+  const below = values.filter((item) => item <= value).length;
+  return Math.round((below / values.length) * 100);
+}
 
-  const shortStatus = fixture.status?.short;
-  const status = shortStatus === "FT" || shortStatus === "AET" || shortStatus === "PEN"
-    ? "finished"
-    : ["1H", "2H", "HT", "ET", "P", "BT", "LIVE"].includes(shortStatus)
-      ? "live"
-      : "scheduled";
-  const goals = item.goals ?? {};
+async function loadFootballPlayers(def, teams) {
+  const rosterResults = await Promise.allSettled(
+    teams.map((team) =>
+      espnFetch(`/${def.espnSport}/${def.espnLeague}/teams/${team.id.replace(`${def.id}-`, "")}/roster`).then(
+        (payload) => (payload.athletes ?? []).map((athlete) => normalizePlayer(athlete, team.id, def.id)).filter(Boolean),
+      ),
+    ),
+  );
+
+  const rawPlayers = rosterResults
+    .filter((result) => result.status === "fulfilled")
+    .flatMap((result) => result.value)
+    .filter((player) => player.appearances > 0);
+
+  const goalsPool = rawPlayers.map((player) => player.goals);
+  const assistsPool = rawPlayers.map((player) => player.assists);
+  const shotsPool = rawPlayers.map((player) => player.shotsOnTarget);
+  const appearancesPool = rawPlayers.map((player) => player.appearances);
+
+  const topPlayersByTeam = new Map();
+  rawPlayers
+    .sort((a, b) => b.goals * 2 + b.assists - (a.goals * 2 + a.assists))
+    .forEach((player) => {
+      const bucket = topPlayersByTeam.get(player.teamId) ?? [];
+      if (bucket.length < 3) {
+        bucket.push(player);
+        topPlayersByTeam.set(player.teamId, bucket);
+      }
+    });
+
+  return [...topPlayersByTeam.values()].flat().map((player) => ({
+    id: player.id,
+    name: player.name,
+    teamId: player.teamId,
+    position: player.position,
+    age: player.age,
+    nationality: player.nationality,
+    marketValueEUR: 0,
+    titles: [],
+    seasons: [
+      {
+        season: def.season,
+        competitionId: def.id,
+        appearances: player.appearances,
+        goals: player.goals,
+        assists: player.assists,
+        shotsOnTarget: player.shotsOnTarget,
+        foulsCommitted: player.foulsCommitted,
+        yellowCards: player.yellowCards,
+        recentRatings: [],
+        percentiles: {
+          goals: percentileRank(goalsPool, player.goals),
+          assists: percentileRank(assistsPool, player.assists),
+          shotsOnTarget: percentileRank(shotsPool, player.shotsOnTarget),
+          appearances: percentileRank(appearancesPool, player.appearances),
+        },
+      },
+    ],
+  }));
+}
+
+function normalizeEvent(event, leagueId) {
+  const competition = event.competitions?.[0];
+  const competitors = competition?.competitors;
+  if (!competition || !competitors || competitors.length < 2) return null;
+
+  const home = competitors.find((item) => item.homeAway === "home");
+  const away = competitors.find((item) => item.homeAway === "away");
+  if (!home?.team?.id || !away?.team?.id) return null;
+
+  const status = mapStatus(competition.status?.type?.state);
 
   return {
-    id: `football-${fixture.id}`,
-    leagueId: `football-${league.id}`,
-    homeTeamId: `football-${teams.home.id}`,
-    awayTeamId: `football-${teams.away.id}`,
-    startsAt: fixture.date,
+    id: `${leagueId}-${event.id}`,
+    leagueId,
+    homeTeamId: `${leagueId}-${home.team.id}`,
+    awayTeamId: `${leagueId}-${away.team.id}`,
+    startsAt: event.date,
     status,
-    venue: fixture.venue?.name || "A definir",
-    ...(status !== "scheduled" ? { homeScore: goals.home ?? 0, awayScore: goals.away ?? 0 } : {}),
+    venue: competition.venue?.fullName || "A definir",
+    ...(status !== "scheduled" ? { homeScore: Number(home.score ?? 0), awayScore: Number(away.score ?? 0) } : {}),
   };
 }
 
-function normalizeNbaEvent(item) {
-  if (!item?.id || !item?.date?.start || !item?.teams?.home?.id || !item?.teams?.visitors?.id) return null;
-
-  const longStatus = String(item.status?.long).toLowerCase();
-  const status = item.status?.short === 3 || longStatus.includes("finished")
-    ? "finished"
-    : item.status?.short === 2 || longStatus.includes("progress") || longStatus.includes("quarter") || longStatus.includes("half")
-      ? "live"
-      : "scheduled";
-
-  return {
-    id: `nba-${item.id}`,
-    leagueId: nbaLeague.id,
-    homeTeamId: `nba-${item.teams.home.id}`,
-    awayTeamId: `nba-${item.teams.visitors.id}`,
-    startsAt: item.date.start,
-    status,
-    venue: item.arena?.name || "A definir",
-    ...(status !== "scheduled"
-      ? { homeScore: item.scores?.home?.points ?? 0, awayScore: item.scores?.visitors?.points ?? 0 }
-      : {}),
-  };
-}
-
-function normalizeNflTeam(item) {
-  if (!item?.id || !item?.name) return null;
-
-  return {
-    id: `nfl-${item.id}`,
-    name: item.name,
-    shortName: item.code || item.name.slice(0, 3).toUpperCase(),
-    leagueId: nflLeague.id,
-    city: item.city || "N/D",
-    color: colorFromId(item.id),
-  };
-}
-
-function normalizeNflEvent(item) {
-  const game = item.game;
-  const teams = item.teams;
-  if (!game?.id || !game?.date?.date || !teams?.home?.id || !teams?.away?.id) return null;
-
-  const shortStatus = String(game.status?.short).toUpperCase();
-  const status = shortStatus === "FT"
-    ? "finished"
-    : ["IP", "LIVE", "HT", "Q1", "Q2", "Q3", "Q4", "OT"].includes(shortStatus)
-      ? "live"
-      : "scheduled";
-  const scores = item.scores ?? {};
-
-  return {
-    id: `nfl-${game.id}`,
-    leagueId: nflLeague.id,
-    homeTeamId: `nfl-${teams.home.id}`,
-    awayTeamId: `nfl-${teams.away.id}`,
-    startsAt: game.date.date,
-    status,
-    venue: game.venue?.name || "A definir",
-    ...(status !== "scheduled"
-      ? { homeScore: scores.home?.total ?? 0, awayScore: scores.away?.total ?? 0 }
-      : {}),
-  };
-}
-
-async function loadSportsData(apiKey) {
-  const footballSeason = process.env.SPORTS_API_FOOTBALL_SEASON ?? getCurrentFootballSeason();
+async function loadLeagueData(def) {
   const today = new Date();
-  const from = formatDate(addDays(today, -7));
-  const to = formatDate(addDays(today, 21));
+  const from = formatDate(addDays(today, -3));
+  const to = formatDate(addDays(today, 10));
 
-  const leagues = [
-    ...footballLeagues.map((league) => ({
-      id: league.id,
-      name: league.name,
-      country: league.country,
-      sport: "football",
-      season: footballSeason,
-      color: league.color,
-    })),
-    nbaLeague,
-    nflLeague,
-  ];
-
-  const footballTeamRequests = footballLeagues.map((league) =>
-    apiSportsFetch(FOOTBALL_BASE_URL, `/teams?league=${league.apiId}&season=${footballSeason}`, apiKey).then((items) =>
-      items.map((item) => normalizeFootballTeam(item, league.id)).filter(Boolean),
-    ),
-  );
-
-  const footballFixtureRequests = footballLeagues.map((league) =>
-    apiSportsFetch(
-      FOOTBALL_BASE_URL,
-      `/fixtures?league=${league.apiId}&season=${footballSeason}&from=${from}&to=${to}`,
-      apiKey,
-    ).then((items) => items.map(normalizeFootballEvent).filter(Boolean)),
-  );
-
-  const [footballTeams, footballEvents, nbaTeams, nbaGames, nflTeams, nflGames] = await Promise.all([
-    Promise.all(footballTeamRequests).then((groups) => groups.flat()),
-    Promise.all(footballFixtureRequests).then((groups) => groups.flat()),
-    apiSportsFetch(NBA_BASE_URL, "/teams", apiKey).then((items) => items.map(normalizeNbaTeam).filter(Boolean)),
-    apiSportsFetch(NBA_BASE_URL, `/games?season=${nbaLeague.season}`, apiKey).then((items) =>
-      items.map(normalizeNbaEvent).filter(Boolean),
-    ),
-    apiSportsFetch(NFL_BASE_URL, `/teams?league=${nflLeague.apiId}&season=${nflLeague.season}`, apiKey).then((items) =>
-      items.map(normalizeNflTeam).filter(Boolean),
-    ),
-    apiSportsFetch(NFL_BASE_URL, `/games?league=${nflLeague.apiId}&season=${nflLeague.season}`, apiKey).then((items) =>
-      items.map(normalizeNflEvent).filter(Boolean),
-    ),
+  const [teamsPayload, scoreboardPayload] = await Promise.all([
+    espnFetch(`/${def.espnSport}/${def.espnLeague}/teams`),
+    espnFetch(`/${def.espnSport}/${def.espnLeague}/scoreboard?dates=${from}-${to}`),
   ]);
 
-  const eventTeamIds = new Set(
-    [...footballEvents, ...nbaGames, ...nflGames].flatMap((event) => [event.homeTeamId, event.awayTeamId]),
-  );
-  const teamsById = new Map([...footballTeams, ...nbaTeams, ...nflTeams].map((team) => [team.id, team]));
-  const teams = [...teamsById.values()].filter((team) => eventTeamIds.has(team.id)).slice(0, 80);
-  const events = [...footballEvents, ...nbaGames, ...nflGames]
-    .filter((event) => teamsById.has(event.homeTeamId) && teamsById.has(event.awayTeamId))
-    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-    .slice(0, 40);
+  const teamGroups = teamsPayload.sports?.[0]?.leagues?.[0]?.teams ?? [];
+  const teams = teamGroups.map((item) => normalizeTeam(item, def.id)).filter(Boolean);
 
-  return { leagues, teams, events, players: [] };
+  const events = (scoreboardPayload.events ?? [])
+    .map((event) => normalizeEvent(event, def.id))
+    .filter(Boolean);
+
+  const players = def.espnSport === "soccer" ? await loadFootballPlayers(def, teams) : [];
+
+  return { teams, events, players };
+}
+
+async function loadSportsData() {
+  const results = await Promise.all(leagueDefs.map((def) => loadLeagueData(def)));
+
+  const leagues = leagueDefs.map(({ id, name, country, sport, season, color }) => ({
+    id,
+    name,
+    country,
+    sport,
+    season,
+    color,
+  }));
+
+  const teamsById = new Map();
+  const events = [];
+  const players = [];
+
+  results.forEach(({ teams, events: leagueEvents, players: leaguePlayers }) => {
+    teams.forEach((team) => teamsById.set(team.id, team));
+    events.push(...leagueEvents);
+    players.push(...leaguePlayers);
+  });
+
+  events.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+
+  return { leagues, teams: [...teamsById.values()], events: events.slice(0, 60), players };
 }
 
 module.exports = async function handler(request, response) {
@@ -292,19 +226,13 @@ module.exports = async function handler(request, response) {
     return;
   }
 
-  const apiKey = process.env.SPORTS_API_KEY;
-  if (!apiKey) {
-    response.status(503).json({ error: "SPORTS_API_KEY is not configured" });
-    return;
-  }
-
   try {
     if (cachedPayload && Date.now() - cachedAt < CACHE_TTL_MS) {
       response.status(200).json(cachedPayload);
       return;
     }
 
-    cachedPayload = await loadSportsData(apiKey);
+    cachedPayload = await loadSportsData();
     cachedAt = Date.now();
     response.status(200).json(cachedPayload);
   } catch (error) {

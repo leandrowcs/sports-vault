@@ -14,18 +14,18 @@ const players: Player[] = [
     id: 'vinicius-jr', name: 'Vinicius Jr.', teamId: 'realmadrid', position: 'Ponta Esquerda', age: 26, nationality: 'Brasil', marketValueEUR: 150_000_000,
     titles: ['UEFA Champions League 2024', 'La Liga 2024', 'Copa do Rei 2023'],
     seasons: [{
-      season: '2026/27', competitionId: 'la-liga', appearances: 6, goals: 5, assists: 3, xG: 4.2, dribblesPerGame: 4.8, topSpeedKmh: 34.7,
+      season: '2026/27', competitionId: 'la-liga', appearances: 6, goals: 5, assists: 3, shotsOnTarget: 14, foulsCommitted: 4, yellowCards: 1,
       recentRatings: [7.8, 8.4, 6.9, 9.1, 7.5],
-      percentiles: { goals: 92, assists: 84, xG: 88, dribbles: 96, speed: 99 },
+      percentiles: { goals: 92, assists: 84, shotsOnTarget: 88, appearances: 70 },
     }],
   },
   {
     id: 'salah', name: 'Mohamed Salah', teamId: 'liverpool', position: 'Ponta Direita', age: 33, nationality: 'Egito', marketValueEUR: 55_000_000,
     titles: ['Premier League 2024', 'Champions League 2019'],
     seasons: [{
-      season: '2026/27', competitionId: 'premier-league', appearances: 6, goals: 6, assists: 2, xG: 5.1, dribblesPerGame: 2.9, topSpeedKmh: 32.1,
+      season: '2026/27', competitionId: 'premier-league', appearances: 6, goals: 6, assists: 2, shotsOnTarget: 17, foulsCommitted: 2, yellowCards: 0,
       recentRatings: [8.1, 7.2, 8.9, 7.6, 6.8],
-      percentiles: { goals: 95, assists: 70, xG: 93, dribbles: 65, speed: 78 },
+      percentiles: { goals: 95, assists: 70, shotsOnTarget: 93, appearances: 70 },
     }],
   },
 ]

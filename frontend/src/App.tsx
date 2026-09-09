@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   ChevronRight,
@@ -45,7 +45,6 @@ function App() {
   const [data, setData] = useState<SportsData | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [vault, setVault] = useState<VaultState>(readLocalVault);
-  const vaultRef = useRef(vault);
   const [query, setQuery] = useState("");
   const [gameSport, setGameSport] = useState<"all" | "football" | "basketball" | "american_football">("all");
   const [gameStatus, setGameStatus] = useState<"all" | "scheduled" | "live" | "finished">("all");
@@ -73,21 +72,14 @@ function App() {
       .catch(() => setDataError("Não foi possível carregar os dados esportivos."));
   }, []);
   useEffect(() => {
-    vaultRef.current = vault;
-  }, [vault]);
-  useEffect(() => {
     if (!user) return;
 
     return (
       subscribeToCloudVault(
         user.uid,
         (cloudVault, exists) => {
-          if (!exists) {
-            void writeVault(user.uid, vaultRef.current).catch(() =>
-              setVaultError("Favoritos salvos apenas neste dispositivo."),
-            );
-            return;
-          }
+          // Doc not created yet: keep local state, the next write (toggle/onboarding) will create it.
+          if (!exists) return;
           setVault(cloudVault);
         },
         () => setVaultError("Favoritos salvos apenas neste dispositivo."),
@@ -652,23 +644,24 @@ function PlayerDialog({ player, team, getLeague, onClose }: { player: Player; te
   const [seasonIndex, setSeasonIndex] = useState(0);
   const stats = player.seasons[seasonIndex] ?? player.seasons[0];
   const competition = stats ? getLeague(stats.competitionId) : null;
-  const marketValue = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(player.marketValueEUR);
+  const marketValue = player.marketValueEUR > 0
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(player.marketValueEUR)
+    : null;
   const metrics = stats
     ? [
+        { label: "Jogos", value: stats.appearances },
         { label: "Gols", value: stats.goals },
         { label: "Assistências", value: stats.assists },
-        { label: "xG", value: stats.xG.toFixed(1) },
-        { label: "Dribles/jogo", value: stats.dribblesPerGame.toFixed(1) },
-        { label: "Vel. máxima", value: `${stats.topSpeedKmh.toFixed(1)} km/h` },
+        { label: "Chutes no gol", value: stats.shotsOnTarget },
+        { label: "Cartões amarelos", value: stats.yellowCards },
       ]
     : [];
   const percentiles = stats
     ? [
         { label: "Gols", value: stats.percentiles.goals },
         { label: "Assistências", value: stats.percentiles.assists },
-        { label: "xG", value: stats.percentiles.xG },
-        { label: "Dribles", value: stats.percentiles.dribbles },
-        { label: "Velocidade", value: stats.percentiles.speed },
+        { label: "Chutes no gol", value: stats.percentiles.shotsOnTarget },
+        { label: "Presença", value: stats.percentiles.appearances },
       ]
     : [];
   return (
@@ -678,7 +671,7 @@ function PlayerDialog({ player, team, getLeague, onClose }: { player: Player; te
         <span className="crest detail-crest" style={{ backgroundColor: team.color }}>{team.shortName.slice(0, 2)}</span>
         <p className="eyebrow">{player.position} · {team.name}</p>
         <h2 id="player-title">{player.name}</h2>
-        <p className="detail-copy">{player.age} anos · {player.nationality} · Valor de mercado {marketValue}</p>
+        <p className="detail-copy">{player.age} anos · {player.nationality}{marketValue ? ` · Valor de mercado ${marketValue}` : ""}</p>
         {player.seasons.length > 1 && (
           <label className="season-select">
             Temporada

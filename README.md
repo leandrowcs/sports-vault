@@ -13,7 +13,7 @@ Biblioteca pessoal para acompanhar times, competições, jogos e resultados.
 
 ## Dados
 
-O aplicativo usa a API-SPORTS por uma rota serverless Vercel em `/api/sports`. O frontend continua desacoplado por `SportsProvider`; componentes de UI não chamam APIs externas diretamente.
+O aplicativo usa a API pública da ESPN por uma rota serverless Vercel em `/api/sports`, sem necessidade de chave. O frontend continua desacoplado por `SportsProvider`; componentes de UI não chamam APIs externas diretamente.
 
 ## Executar
 
@@ -33,22 +33,9 @@ npm run build
 
 ## API esportiva
 
-Crie uma conta em API-SPORTS e configure a chave como variável de servidor, sem prefixo `VITE_`:
+A rota `/api/sports` consulta a API pública da ESPN (`site.api.espn.com`), sem chave nem cadastro. Localmente, use `vercel dev` na raiz do projeto para executar o frontend junto com a rota `/api/sports`.
 
-```env
-SPORTS_API_KEY=
-```
-
-No Vercel, configure `SPORTS_API_KEY` em Environment Variables. Localmente, use `vercel dev` na raiz do projeto para executar o frontend junto com a rota `/api/sports`.
-
-Variáveis opcionais:
-
-```env
-SPORTS_API_FOOTBALL_SEASON=2026
-SPORTS_API_NBA_SEASON=2025
-```
-
-O provider real consulta futebol em `v3.football.api-sports.io` e NBA em `v2.nba.api-sports.io`. Para voltar ao provider mock durante desenvolvimento:
+O provider real consulta futebol (Premier League, LaLiga, Champions League), NBA e NFL em `site.api.espn.com/apis/site/v2/sports`. Para voltar ao provider mock durante desenvolvimento:
 
 ```env
 VITE_USE_MOCK_SPORTS=true

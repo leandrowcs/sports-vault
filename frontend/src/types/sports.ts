@@ -10,11 +10,11 @@ export interface PlayerSeasonStats {
   appearances: number
   goals: number
   assists: number
-  xG: number
-  dribblesPerGame: number
-  topSpeedKmh: number
+  shotsOnTarget: number
+  foulsCommitted: number
+  yellowCards: number
   recentRatings: number[]
-  percentiles: { goals: number; assists: number; xG: number; dribbles: number; speed: number }
+  percentiles: { goals: number; assists: number; shotsOnTarget: number; appearances: number }
 }
 export interface Player {
   id: string
