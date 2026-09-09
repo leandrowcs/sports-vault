@@ -552,6 +552,68 @@
 .mobile-nav {
   display: none;
 }
+.install-app-prompt {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, calc(100vw - 40px));
+  border: 1px solid rgba(197, 208, 255, .28);
+  border-radius: 8px;
+  background: rgba(17, 23, 32, .96);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .34);
+  color: var(--vault-ink);
+  padding: 12px;
+  backdrop-filter: blur(12px);
+}
+.install-app-prompt > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.install-app-prompt svg {
+  color: #c5d0ff;
+  flex: 0 0 auto;
+}
+.install-app-prompt b,
+.install-app-prompt small {
+  display: block;
+}
+.install-app-prompt b {
+  font-size: 13px;
+}
+.install-app-prompt small {
+  margin-top: 2px;
+  color: var(--vault-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+.install-action,
+.install-dismiss {
+  border: 0;
+  border-radius: 6px;
+  font-weight: 900;
+}
+.install-action {
+  background: #c5d0ff;
+  color: #00174c;
+  padding: 9px 11px;
+  font-size: 12px;
+}
+.install-dismiss {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: #262a33;
+  color: var(--vault-muted);
+  padding: 0;
+}
 .onboarding-screen {
   min-height: 100svh;
   display: flex;
@@ -1086,7 +1148,7 @@
 }
 .vault-mobile-topbar,
 .sport-filter-strip,
-.vault-bottom-actions {
+.app-bottom-nav {
   display: none;
 }
 .vault-feed-section-heading {
@@ -1123,6 +1185,24 @@
   align-items: center;
   gap: 2px;
   padding: 0;
+}
+.carousel-heading {
+  align-items: center;
+}
+.carousel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.carousel-actions button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(197, 208, 255, .24);
+  border-radius: 8px;
+  background: #181c24;
+  color: #c5d0ff;
 }
 .filter-dot {
   width: 7px;
@@ -2331,32 +2411,43 @@
   .hero-stats {
     display: none;
   }
-  .mobile-nav {
+  .app-bottom-nav {
     display: flex;
     position: fixed;
-    height: 65px;
     bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(11, 18, 32, 0.96);
-    border-top: 1px solid var(--vault-border);
-    z-index: 3;
+    left: 50%;
+    width: min(430px, 100vw);
+    height: 66px;
+    transform: translateX(-50%);
+    background: rgba(15, 19, 28, .94);
+    border-top: 1px solid rgba(132, 149, 135, .2);
+    z-index: 20;
     justify-content: space-around;
+    backdrop-filter: blur(10px);
   }
-  .mobile-nav button {
+  .app-bottom-nav button {
     border: 0;
     background: transparent;
     color: var(--vault-muted);
     display: grid;
     place-items: center;
-    gap: 2px;
+    gap: 3px;
     padding: 8px 5px;
-    min-width: 58px;
-    font-size: 9px;
-    font-weight: 700;
+    min-width: 64px;
+    font-size: 10px;
+    font-weight: 900;
   }
-  .mobile-nav button.active {
-    color: var(--vault-primary);
+  .app-bottom-nav button.active {
+    color: #c5d0ff;
+  }
+  .install-app-prompt {
+    right: 12px;
+    bottom: 78px;
+    left: 12px;
+    width: auto;
+  }
+  .install-app-prompt small {
+    display: none;
   }
   .vault-feed-home {
     max-width: 430px;
@@ -2475,6 +2566,19 @@
   .vault-feed-section-heading h2 {
     font-size: 17px;
   }
+  .carousel-heading {
+    padding-right: 12px;
+  }
+  .carousel-actions {
+    gap: 5px;
+  }
+  .carousel-actions > span {
+    display: none;
+  }
+  .carousel-actions button {
+    width: 32px;
+    height: 32px;
+  }
   .featured-match-carousel {
     display: flex;
     grid-template-columns: none;
@@ -2501,34 +2605,6 @@
   .standings-card {
     grid-template-columns: 1fr;
     gap: 14px;
-  }
-  .vault-bottom-actions {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    width: min(430px, 100vw);
-    transform: translateX(-50%);
-    z-index: 20;
-    display: flex;
-    justify-content: space-around;
-    height: 66px;
-    border-top: 1px solid rgba(132, 149, 135, .2);
-    background: rgba(15, 19, 28, .94);
-    backdrop-filter: blur(10px);
-  }
-  .vault-bottom-actions button {
-    display: grid;
-    place-items: center;
-    gap: 3px;
-    min-width: 64px;
-    border: 0;
-    background: transparent;
-    color: var(--vault-muted);
-    font-size: 10px;
-    font-weight: 900;
-  }
-  .vault-bottom-actions button.active {
-    color: #c5d0ff;
   }
   .app-shell:has(.vault-feed-home) .mobile-nav {
     display: none;

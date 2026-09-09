@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   ArrowLeft,
@@ -7,10 +7,12 @@ import {
   Bell,
   Bot,
   CalendarDays,
+  ChevronLeft,
   Check,
   ChevronRight,
   CircleUserRound,
   Compass,
+  Download,
   Heart,
   Home,
   LogIn,
@@ -28,6 +30,7 @@ import {
   Star,
   Trophy,
   UsersRound,
+  X,
 } from "lucide-react";
 import "./App.css";
 import { LoginScreen } from "./components/LoginScreen";
@@ -53,6 +56,10 @@ interface SportsData {
   teams: Team[];
   events: SportEvent[];
   players: Player[];
+}
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
 const navigation: { id: View; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Início", icon: Home },
@@ -320,8 +327,9 @@ function App() {
             getTeam={team}
             getLeague={league}
             onOpenGames={() => setView("games")}
-            onOpenVault={() => setView("vault")}
+            onOpenFavorites={() => setView("vault")}
             onOpenSearch={() => setView("search")}
+            onOpenVault={() => setView("home")}
             onSelectEvent={setSelectedEvent}
           />
         )}
@@ -416,18 +424,14 @@ function App() {
           </>
         )}
       </main>
-      <nav className="mobile-nav" aria-label="Navegação móvel">
-        {navigation.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            className={view === id ? "active" : ""}
-            onClick={() => setView(id)}
-          >
-            <Icon size={20} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
+      <AppBottomNav
+        active={view === "games" ? "games" : view === "search" ? "explore" : view === "vault" ? "favorites" : "vault"}
+        className="mobile-nav"
+        onOpenGames={() => setView("games")}
+        onOpenVault={() => setView("home")}
+        onOpenSearch={() => setView("search")}
+        onOpenFavorites={() => setView("vault")}
+      />
       {(selectedTeam || selectedEvent) && (
         <DetailDialog
           team={selectedTeam}
@@ -464,7 +468,99 @@ function App() {
           onClose={() => setHeadToHead(null)}
         />
       )}
+      <InstallAppPrompt />
     </div>
+  );
+}
+function InstallAppPrompt() {
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isDismissed, setIsDismissed] = useState(
+    () => localStorage.getItem("sports-vault:install-dismissed") === "true",
+  );
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    setIsStandalone(
+      window.matchMedia("(display-mode: standalone)").matches ||
+        ("standalone" in window.navigator && window.navigator.standalone === true),
+    );
+
+    function onBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    }
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+  }, []);
+
+  async function installApp() {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  }
+
+  function dismiss() {
+    localStorage.setItem("sports-vault:install-dismissed", "true");
+    setIsDismissed(true);
+  }
+
+  if (isStandalone || isDismissed || !installPrompt) return null;
+
+  return (
+    <aside className="install-app-prompt" aria-label="Instalar Sports Vault">
+      <div>
+        <Download size={18} />
+        <span>
+          <b>Instalar Sports Vault</b>
+          <small>Acesse como app local, com cache e tela cheia.</small>
+        </span>
+      </div>
+      <button className="install-action" onClick={() => void installApp()}>
+        Instalar
+      </button>
+      <button className="install-dismiss" onClick={dismiss} aria-label="Fechar sugestão de instalação">
+        <X size={16} />
+      </button>
+    </aside>
+  );
+}
+type BottomNavItem = "vault" | "games" | "explore" | "favorites" | "profile";
+function AppBottomNav({
+  active,
+  className = "",
+  onOpenFavorites,
+  onOpenGames,
+  onOpenSearch,
+  onOpenVault,
+  onOpenProfile,
+}: {
+  active: BottomNavItem;
+  className?: string;
+  onOpenFavorites: () => void;
+  onOpenGames: () => void;
+  onOpenSearch: () => void;
+  onOpenVault: () => void;
+  onOpenProfile?: () => void;
+}) {
+  const items: { id: BottomNavItem; label: string; icon: typeof Shield; onClick: () => void }[] = [
+    { id: "vault", label: "Vault", icon: Shield, onClick: onOpenVault },
+    { id: "games", label: "Jogos", icon: Trophy, onClick: onOpenGames },
+    { id: "explore", label: "Explorar", icon: Search, onClick: onOpenSearch },
+    { id: "favorites", label: "Favoritos", icon: Star, onClick: onOpenFavorites },
+    { id: "profile", label: "Perfil", icon: CircleUserRound, onClick: onOpenProfile ?? onOpenVault },
+  ];
+
+  return (
+    <nav className={`app-bottom-nav ${className}`.trim()} aria-label="Navegação principal">
+      {items.map(({ id, label, icon: Icon, onClick }) => (
+        <button key={id} className={active === id ? "active" : ""} onClick={onClick}>
+          <Icon size={20} fill={active === id && (id === "vault" || id === "favorites") ? "currentColor" : "none"} />
+          <span>{label}</span>
+        </button>
+      ))}
+    </nav>
   );
 }
 const onboardingSports: { id: SportCode; label: string }[] = [
@@ -722,6 +818,7 @@ function VaultFeedHome({
   getTeam,
   getLeague,
   onOpenGames,
+  onOpenFavorites,
   onOpenVault,
   onOpenSearch,
   onSelectEvent,
@@ -732,10 +829,12 @@ function VaultFeedHome({
   getTeam: (id: string) => Team;
   getLeague: (id: string) => League;
   onOpenGames: () => void;
+  onOpenFavorites: () => void;
   onOpenVault: () => void;
   onOpenSearch: () => void;
   onSelectEvent: (event: SportEvent) => void;
 }) {
+  const carouselRef = useRef<HTMLDivElement | null>(null);
   const liveEvents = events.filter((event) => event.status === "live");
   const featuredEvents = [
     ...liveEvents,
@@ -747,6 +846,12 @@ function VaultFeedHome({
   const featuredLeague = featuredTeam ? getLeague(featuredTeam.leagueId) : null;
   const topFootballTeams = favorites.length ? favorites.slice(0, 3) : featuredEvents.map((event) => getTeam(event.homeTeamId)).slice(0, 3);
   const topPlayers = players.slice(0, 2);
+  const scrollFeaturedMatches = (direction: "left" | "right") => {
+    carouselRef.current?.scrollBy({
+      behavior: "smooth",
+      left: direction === "left" ? -324 : 324,
+    });
+  };
 
   return (
     <section className="vault-feed-home" aria-label="The Vault Feed">
@@ -790,15 +895,23 @@ function VaultFeedHome({
         </button>
       </nav>
 
-      <div className="vault-feed-section-heading">
+      <div className="vault-feed-section-heading carousel-heading">
         <div>
           <span className="filter-dot pulse" />
           <h2>Jogos Ao Vivo & Destaque</h2>
         </div>
-        <span>{Math.max(liveEvents.length, 1)} ativos</span>
+        <div className="carousel-actions">
+          <span>{Math.max(liveEvents.length, 1)} ativos</span>
+          <button type="button" onClick={() => scrollFeaturedMatches("left")} aria-label="Ver jogos anteriores">
+            <ChevronLeft size={16} />
+          </button>
+          <button type="button" onClick={() => scrollFeaturedMatches("right")} aria-label="Ver próximos jogos">
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
       {featuredEvents.length ? (
-        <div className="featured-match-carousel">
+        <div className="featured-match-carousel" ref={carouselRef}>
           {featuredEvents.map((event) => (
             <FeaturedMatchCard
               key={event.id}
@@ -891,24 +1004,13 @@ function VaultFeedHome({
         </div>
       </section>
 
-      <div className="vault-bottom-actions" aria-label="Navegação rápida da home">
-        <button className="active" onClick={onOpenVault}>
-          <Shield size={20} fill="currentColor" />
-          Vault
-        </button>
-        <button onClick={onOpenGames}>
-          <Trophy size={20} />
-          Jogos
-        </button>
-        <button onClick={onOpenSearch}>
-          <Search size={20} />
-          Explorar
-        </button>
-        <button onClick={onOpenVault}>
-          <Star size={20} />
-          Favoritos
-        </button>
-      </div>
+      <AppBottomNav
+        active="vault"
+        onOpenFavorites={onOpenFavorites}
+        onOpenGames={onOpenGames}
+        onOpenSearch={onOpenSearch}
+        onOpenVault={onOpenVault}
+      />
     </section>
   );
 }
@@ -1222,24 +1324,14 @@ function PlayerVaultPage({
         )}
       </section>
 
-      <div className="vault-bottom-actions player-vault-bottom" aria-label="Navegação do perfil do atleta">
-        <button onClick={onOpenVault}>
-          <Shield size={20} />
-          Vault
-        </button>
-        <button onClick={onOpenGames}>
-          <Trophy size={20} />
-          Jogos
-        </button>
-        <button onClick={onOpenSearch}>
-          <Search size={20} />
-          Explorar
-        </button>
-        <button className="active">
-          <CircleUserRound size={20} />
-          Perfil
-        </button>
-      </div>
+      <AppBottomNav
+        active="profile"
+        className="player-vault-bottom"
+        onOpenFavorites={onOpenVault}
+        onOpenGames={onOpenGames}
+        onOpenSearch={onOpenSearch}
+        onOpenVault={onOpenVault}
+      />
     </section>
   );
 }
@@ -1429,24 +1521,14 @@ function TeamVaultPage({
         </div>
       </section>
 
-      <div className="vault-bottom-actions team-vault-bottom" aria-label="Navegação do Team Vault">
-        <button className="active" onClick={onOpenVault}>
-          <Shield size={20} fill="currentColor" />
-          Vault
-        </button>
-        <button onClick={onOpenGames}>
-          <Trophy size={20} />
-          Jogos
-        </button>
-        <button onClick={onOpenSearch}>
-          <Search size={20} />
-          Explorar
-        </button>
-        <button onClick={onToggleFavorite}>
-          <Star size={20} fill={saved ? "currentColor" : "none"} />
-          Favoritos
-        </button>
-      </div>
+      <AppBottomNav
+        active="vault"
+        className="team-vault-bottom"
+        onOpenFavorites={onToggleFavorite}
+        onOpenGames={onOpenGames}
+        onOpenSearch={onOpenSearch}
+        onOpenVault={onOpenVault}
+      />
     </section>
   );
 }
