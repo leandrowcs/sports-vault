@@ -6,9 +6,9 @@ const storageKey = "sports-vault:favorites";
 export function readLocalVault(): VaultState {
   try {
     const saved = localStorage.getItem(storageKey);
-    return saved ? (JSON.parse(saved) as VaultState) : { teamIds: [] };
+    return saved ? (JSON.parse(saved) as VaultState) : { teamIds: [], onboarded: false };
   } catch {
-    return { teamIds: [] };
+    return { teamIds: [], onboarded: false };
   }
 }
 export function writeLocalVault(vault: VaultState): void {
@@ -30,6 +30,7 @@ export function subscribeToCloudVault(
         teamIds: Array.isArray(data?.teamIds)
           ? data.teamIds.filter((id): id is string => typeof id === "string")
           : [],
+        onboarded: data?.onboarded === true,
       };
       writeLocalVault(vault);
       onChange(vault, snapshot.exists());

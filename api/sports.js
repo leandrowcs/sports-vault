@@ -1,5 +1,6 @@
 const FOOTBALL_BASE_URL = "https://v3.football.api-sports.io";
 const NBA_BASE_URL = "https://v2.nba.api-sports.io";
+const NFL_BASE_URL = "https://v1.american-football.api-sports.io";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 const footballLeagues = [
@@ -33,6 +34,16 @@ const nbaLeague = {
   sport: "basketball",
   season: process.env.SPORTS_API_NBA_SEASON ?? "2024",
   color: "#ea580c",
+};
+
+const nflLeague = {
+  apiId: 1,
+  id: "nfl",
+  name: "NFL",
+  country: "Estados Unidos",
+  sport: "american_football",
+  season: process.env.SPORTS_API_NFL_SEASON ?? "2024",
+  color: "#7c2d12",
 };
 
 let cachedPayload;
@@ -129,7 +140,12 @@ function normalizeFootballEvent(item) {
   const teams = item.teams;
   if (!fixture?.id || !fixture?.date || !league?.id || !teams?.home?.id || !teams?.away?.id) return null;
 
-  const status = fixture.status?.short === "FT" ? "finished" : "scheduled";
+  const shortStatus = fixture.status?.short;
+  const status = shortStatus === "FT" || shortStatus === "AET" || shortStatus === "PEN"
+    ? "finished"
+    : ["1H", "2H", "HT", "ET", "P", "BT", "LIVE"].includes(shortStatus)
+      ? "live"
+      : "scheduled";
   const goals = item.goals ?? {};
 
   return {
@@ -140,14 +156,19 @@ function normalizeFootballEvent(item) {
     startsAt: fixture.date,
     status,
     venue: fixture.venue?.name || "A definir",
-    ...(status === "finished" ? { homeScore: goals.home ?? 0, awayScore: goals.away ?? 0 } : {}),
+    ...(status !== "scheduled" ? { homeScore: goals.home ?? 0, awayScore: goals.away ?? 0 } : {}),
   };
 }
 
 function normalizeNbaEvent(item) {
   if (!item?.id || !item?.date?.start || !item?.teams?.home?.id || !item?.teams?.visitors?.id) return null;
 
-  const isFinished = item.status?.short === 3 || String(item.status?.long).toLowerCase().includes("finished");
+  const longStatus = String(item.status?.long).toLowerCase();
+  const status = item.status?.short === 3 || longStatus.includes("finished")
+    ? "finished"
+    : item.status?.short === 2 || longStatus.includes("progress") || longStatus.includes("quarter") || longStatus.includes("half")
+      ? "live"
+      : "scheduled";
 
   return {
     id: `nba-${item.id}`,
@@ -155,10 +176,50 @@ function normalizeNbaEvent(item) {
     homeTeamId: `nba-${item.teams.home.id}`,
     awayTeamId: `nba-${item.teams.visitors.id}`,
     startsAt: item.date.start,
-    status: isFinished ? "finished" : "scheduled",
+    status,
     venue: item.arena?.name || "A definir",
-    ...(isFinished
+    ...(status !== "scheduled"
       ? { homeScore: item.scores?.home?.points ?? 0, awayScore: item.scores?.visitors?.points ?? 0 }
+      : {}),
+  };
+}
+
+function normalizeNflTeam(item) {
+  if (!item?.id || !item?.name) return null;
+
+  return {
+    id: `nfl-${item.id}`,
+    name: item.name,
+    shortName: item.code || item.name.slice(0, 3).toUpperCase(),
+    leagueId: nflLeague.id,
+    city: item.city || "N/D",
+    color: colorFromId(item.id),
+  };
+}
+
+function normalizeNflEvent(item) {
+  const game = item.game;
+  const teams = item.teams;
+  if (!game?.id || !game?.date?.date || !teams?.home?.id || !teams?.away?.id) return null;
+
+  const shortStatus = String(game.status?.short).toUpperCase();
+  const status = shortStatus === "FT"
+    ? "finished"
+    : ["IP", "LIVE", "HT", "Q1", "Q2", "Q3", "Q4", "OT"].includes(shortStatus)
+      ? "live"
+      : "scheduled";
+  const scores = item.scores ?? {};
+
+  return {
+    id: `nfl-${game.id}`,
+    leagueId: nflLeague.id,
+    homeTeamId: `nfl-${teams.home.id}`,
+    awayTeamId: `nfl-${teams.away.id}`,
+    startsAt: game.date.date,
+    status,
+    venue: game.venue?.name || "A definir",
+    ...(status !== "scheduled"
+      ? { homeScore: scores.home?.total ?? 0, awayScore: scores.away?.total ?? 0 }
       : {}),
   };
 }
@@ -179,6 +240,7 @@ async function loadSportsData(apiKey) {
       color: league.color,
     })),
     nbaLeague,
+    nflLeague,
   ];
 
   const footballTeamRequests = footballLeagues.map((league) =>
@@ -195,24 +257,32 @@ async function loadSportsData(apiKey) {
     ).then((items) => items.map(normalizeFootballEvent).filter(Boolean)),
   );
 
-  const [footballTeams, footballEvents, nbaTeams, nbaGames] = await Promise.all([
+  const [footballTeams, footballEvents, nbaTeams, nbaGames, nflTeams, nflGames] = await Promise.all([
     Promise.all(footballTeamRequests).then((groups) => groups.flat()),
     Promise.all(footballFixtureRequests).then((groups) => groups.flat()),
     apiSportsFetch(NBA_BASE_URL, "/teams", apiKey).then((items) => items.map(normalizeNbaTeam).filter(Boolean)),
     apiSportsFetch(NBA_BASE_URL, `/games?season=${nbaLeague.season}`, apiKey).then((items) =>
       items.map(normalizeNbaEvent).filter(Boolean),
     ),
+    apiSportsFetch(NFL_BASE_URL, `/teams?league=${nflLeague.apiId}&season=${nflLeague.season}`, apiKey).then((items) =>
+      items.map(normalizeNflTeam).filter(Boolean),
+    ),
+    apiSportsFetch(NFL_BASE_URL, `/games?league=${nflLeague.apiId}&season=${nflLeague.season}`, apiKey).then((items) =>
+      items.map(normalizeNflEvent).filter(Boolean),
+    ),
   ]);
 
-  const eventTeamIds = new Set([...footballEvents, ...nbaGames].flatMap((event) => [event.homeTeamId, event.awayTeamId]));
-  const teamsById = new Map([...footballTeams, ...nbaTeams].map((team) => [team.id, team]));
+  const eventTeamIds = new Set(
+    [...footballEvents, ...nbaGames, ...nflGames].flatMap((event) => [event.homeTeamId, event.awayTeamId]),
+  );
+  const teamsById = new Map([...footballTeams, ...nbaTeams, ...nflTeams].map((team) => [team.id, team]));
   const teams = [...teamsById.values()].filter((team) => eventTeamIds.has(team.id)).slice(0, 80);
-  const events = [...footballEvents, ...nbaGames]
+  const events = [...footballEvents, ...nbaGames, ...nflGames]
     .filter((event) => teamsById.has(event.homeTeamId) && teamsById.has(event.awayTeamId))
     .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
     .slice(0, 40);
 
-  return { leagues, teams, events };
+  return { leagues, teams, events, players: [] };
 }
 
 module.exports = async function handler(request, response) {

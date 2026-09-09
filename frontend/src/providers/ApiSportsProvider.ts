@@ -1,10 +1,11 @@
-import type { League, SportEvent, Team } from "../types/sports";
+import type { League, Player, SportEvent, Team } from "../types/sports";
 import type { SportsProvider } from "./SportsProvider";
 
 interface SportsApiPayload {
   leagues?: League[];
   teams?: Team[];
   events?: SportEvent[];
+  players?: Player[];
 }
 
 const sportsApiBaseUrl = import.meta.env.VITE_SPORTS_API_BASE_URL || "/api/sports";
@@ -22,6 +23,7 @@ async function loadSportsData(): Promise<Required<SportsApiPayload>> {
     leagues: Array.isArray(payload.leagues) ? payload.leagues : [],
     teams: Array.isArray(payload.teams) ? payload.teams : [],
     events: Array.isArray(payload.events) ? payload.events : [],
+    players: Array.isArray(payload.players) ? payload.players : [],
   };
 }
 
@@ -41,5 +43,8 @@ export const apiSportsProvider: SportsProvider = {
   },
   async getEvents() {
     return (await getSportsData()).events;
+  },
+  async getPlayers() {
+    return (await getSportsData()).players;
   },
 };
