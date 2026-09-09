@@ -11,6 +11,7 @@ import {
   Trophy,
 } from "lucide-react";
 import "./App.css";
+import { LoginScreen } from "./components/LoginScreen";
 import { useCloudAuth } from "./hooks/useCloudAuth";
 import { sportsService } from "./services/sportsService";
 import {
@@ -108,6 +109,16 @@ function App() {
       );
       return next;
     });
+  }
+  if (isConfigured && (isAuthLoading || !user)) {
+    return (
+      <LoginScreen
+        isConfigured={isConfigured}
+        isLoading={isAuthLoading}
+        error={authError}
+        onSignIn={() => void signIn()}
+      />
+    );
   }
   if (dataError) {
     return (

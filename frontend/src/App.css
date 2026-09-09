@@ -89,6 +89,44 @@
   margin: 0 auto;
   padding: 34px 44px 64px;
 }
+.login-screen {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 78% 0%, #d8eaff 0, transparent 28rem),
+    var(--vault-bg);
+  padding: 24px;
+}
+.login-card {
+  width: min(360px, 100%);
+  background: var(--vault-surface);
+  border: 1px solid var(--vault-border);
+  border-radius: 12px;
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+.login-card h1 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--vault-ink);
+}
+.login-card p {
+  margin: 0;
+  color: var(--vault-muted);
+  font-size: 14px;
+}
+.login-card .primary-button {
+  width: 100%;
+  justify-content: center;
+}
+.login-card .primary-button:disabled {
+  opacity: 0.65;
+}
 .topbar {
   display: flex;
   align-items: center;
