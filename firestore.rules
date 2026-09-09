@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedInAs(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidVault(data) {
+      return data.keys().hasOnly(['teamIds'])
+        && data.teamIds is list
+        && data.teamIds.size() <= 200;
+    }
+
+    match /users/{userId} {
+      allow read, write: if false;
+
+      match /vault/{vaultId} {
+        allow read: if isSignedInAs(userId) && vaultId == 'favorites';
+        allow create, update: if isSignedInAs(userId)
+          && vaultId == 'favorites'
+          && isValidVault(request.resource.data);
+        allow delete: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -39,6 +39,7 @@ const navigation: { id: View; label: string; icon: typeof Home }[] = [
 function App() {
   const [view, setView] = useState<View>("home");
   const [data, setData] = useState<SportsData | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [vault, setVault] = useState<VaultState>(readLocalVault);
   const vaultRef = useRef(vault);
   const [query, setQuery] = useState("");
@@ -60,7 +61,9 @@ function App() {
       sportsService.getLeagues(),
       sportsService.getTeams(),
       sportsService.getEvents(),
-    ]).then(([leagues, teams, events]) => setData({ leagues, teams, events }));
+    ])
+      .then(([leagues, teams, events]) => setData({ leagues, teams, events }))
+      .catch(() => setDataError("Não foi possível carregar os dados esportivos."));
   }, []);
   useEffect(() => {
     vaultRef.current = vault;
@@ -105,6 +108,13 @@ function App() {
       );
       return next;
     });
+  }
+  if (dataError) {
+    return (
+      <main className="loading" role="alert">
+        {dataError}
+      </main>
+    );
   }
   if (!data) return <main className="loading">Carregando seu Vault...</main>;
   const team = (id: string) => data.teams.find((item) => item.id === id)!;
