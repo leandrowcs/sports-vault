@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import {
+  Activity,
+  ArrowLeft,
   ArrowRight,
   BarChart3,
   Bell,
@@ -12,12 +14,16 @@ import {
   Home,
   LogIn,
   LogOut,
+  MapPin,
+  Medal,
   Menu,
+  MoreVertical,
   Shield,
   Search,
   Sparkles,
   Star,
   Trophy,
+  UsersRound,
 } from "lucide-react";
 import "./App.css";
 import { LoginScreen } from "./components/LoginScreen";
@@ -58,6 +64,7 @@ function App() {
   const [query, setQuery] = useState("");
   const [gameSport, setGameSport] = useState<"all" | "football" | "basketball" | "american_football">("all");
   const [gameStatus, setGameStatus] = useState<"all" | "scheduled" | "live" | "finished">("all");
+  const [teamPage, setTeamPage] = useState<Team | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<SportEvent | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -99,6 +106,7 @@ function App() {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        setTeamPage(null);
         setSelectedTeam(null);
         setSelectedEvent(null);
         setSelectedPlayer(null);
@@ -214,7 +222,7 @@ function App() {
         </div>
       </aside>
       <main className="content">
-        <header className="topbar">
+        {!teamPage && <header className="topbar">
           <div>
             <p className="eyebrow">SEU PAINEL ESPORTIVO</p>
             <h1>
@@ -245,13 +253,38 @@ function App() {
           ) : (
             <span className="demo-account">Modo demo</span>
           )}
-        </header>
+        </header>}
         {(authError || vaultError) && (
           <p className="sync-error" role="alert">
             {authError ?? vaultError}
           </p>
         )}
-        {view === "home" && (
+        {teamPage ? (
+          <TeamVaultPage
+            team={teamPage}
+            league={league(teamPage.leagueId)}
+            events={data.events.filter((event) => event.homeTeamId === teamPage.id || event.awayTeamId === teamPage.id)}
+            players={data.players.filter((player) => player.teamId === teamPage.id)}
+            teams={data.teams}
+            getTeam={team}
+            saved={vault.teamIds.includes(teamPage.id)}
+            onBack={() => setTeamPage(null)}
+            onToggleFavorite={() => toggleTeam(teamPage.id)}
+            onOpenGames={() => {
+              setTeamPage(null);
+              setView("games");
+            }}
+            onOpenVault={() => {
+              setTeamPage(null);
+              setView("vault");
+            }}
+            onOpenSearch={() => {
+              setTeamPage(null);
+              setView("search");
+            }}
+            onSelectPlayer={setSelectedPlayer}
+          />
+        ) : view === "home" && (
           <VaultFeedHome
             events={data.events}
             favorites={favorites}
@@ -303,7 +336,7 @@ function App() {
                     league={league(item.leagueId)}
                     saved
                     onToggle={toggleTeam}
-                    onSelect={setSelectedTeam}
+                    onSelect={setTeamPage}
                   />
                 ))}
               </div>
@@ -348,7 +381,7 @@ function App() {
                     league={league(item.leagueId)}
                     saved={vault.teamIds.includes(item.id)}
                     onToggle={toggleTeam}
-                    onSelect={setSelectedTeam}
+                    onSelect={setTeamPage}
                   />
                 ))}
             </div> : <div className="empty-state"><Search size={25} /><h3>Nada encontrado.</h3><p>Busque por um time, cidade ou competição.</p></div>}
@@ -860,6 +893,248 @@ function AnalysisCard({ tag, title, byline, tone }: { tag: string; title: string
       </div>
     </article>
   );
+}
+function TeamVaultPage({
+  team,
+  league,
+  events,
+  players,
+  teams,
+  getTeam,
+  saved,
+  onBack,
+  onToggleFavorite,
+  onOpenGames,
+  onOpenVault,
+  onOpenSearch,
+  onSelectPlayer,
+}: {
+  team: Team;
+  league: League;
+  events: SportEvent[];
+  players: Player[];
+  teams: Team[];
+  getTeam: (id: string) => Team;
+  saved: boolean;
+  onBack: () => void;
+  onToggleFavorite: () => void;
+  onOpenGames: () => void;
+  onOpenVault: () => void;
+  onOpenSearch: () => void;
+  onSelectPlayer: (player: Player) => void;
+}) {
+  const upcoming = events
+    .filter((event) => event.status === "scheduled" || event.status === "live")
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0];
+  const opponent = upcoming
+    ? getTeam(upcoming.homeTeamId === team.id ? upcoming.awayTeamId : upcoming.homeTeamId)
+    : teams.find((item) => item.leagueId === team.leagueId && item.id !== team.id);
+  const wins = 34 + (team.shortName.length % 6);
+  const losses = 24 - (team.shortName.length % 4);
+  const ranking = Math.max(1, teams.filter((item) => item.leagueId === team.leagueId).findIndex((item) => item.id === team.id) + 1);
+  const form = ["V", "V", "D", "V", wins % 2 === 0 ? "V" : "D"];
+  const leaderCards = [
+    { label: "Gols/Pontos", player: players[0], value: players[0]?.seasons[0]?.goals ? `${players[0].seasons[0].goals}` : "25.2", unit: league.sport === "basketball" ? "PPG" : "Gols" },
+    { label: "Assistências", player: players[1] ?? players[0], value: `${players[1]?.seasons[0]?.assists ?? players[0]?.seasons[0]?.assists ?? 7.8}`, unit: "APG" },
+    { label: "Presença", player: players[0], value: `${players[0]?.seasons[0]?.appearances ?? 14}`, unit: "Jogos" },
+  ];
+  const lineup = buildLineup(players, team);
+
+  return (
+    <section className="team-vault-page" aria-label={`${team.name} Team Vault`}>
+      <header className="team-vault-topbar">
+        <button onClick={onBack} aria-label="Voltar">
+          <ArrowLeft size={21} />
+        </button>
+        <div>
+          <b>SPORTS VAULT</b>
+          <span />
+        </div>
+        <nav aria-label="Ações do time">
+          <button onClick={onToggleFavorite} aria-label={saved ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
+            <Star size={20} fill={saved ? "currentColor" : "none"} />
+          </button>
+          <button aria-label="Menu de opções">
+            <MoreVertical size={20} />
+          </button>
+        </nav>
+      </header>
+
+      <div className="team-hero-card" style={{ "--team-color": team.color } as React.CSSProperties}>
+        <div className="team-hero-surface" />
+        <div className="team-hero-content">
+          <div className="team-crest-xl">
+            <Shield size={44} fill="currentColor" />
+            <small>{team.shortName}</small>
+          </div>
+          <h1>{team.name}</h1>
+          <p>{league.name} • {league.country}</p>
+          <div className="team-record-pill">
+            <span />
+            <b>{wins}-{losses}</b>
+            <small>({ranking}º na liga)</small>
+          </div>
+          <div className="team-form-strip">
+            <span>Forma:</span>
+            {form.map((result, index) => (
+              <b key={`${result}-${index}`} className={result === "V" ? "win" : "loss"}>{result}</b>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <nav className="team-pill-tabs" aria-label="Seções do time">
+        {["Visão Geral", "Jogos", "Classificação", "Elenco", "Estatísticas"].map((tab, index) => (
+          <button key={tab} className={index === 0 ? "active" : ""}>{tab}</button>
+        ))}
+      </nav>
+
+      <section className="team-module next-match-module">
+        <header>
+          <div>
+            <Trophy size={16} />
+            <span>Próximo duelo • {league.season}</span>
+          </div>
+          <b>{upcoming ? formatShortKickoff(upcoming.startsAt) : "A definir"}</b>
+        </header>
+        <div className="team-faceoff">
+          <TeamFaceoffBadge team={team} record={`${wins}-${losses}`} />
+          <div className="faceoff-center">
+            <strong>VS</strong>
+            <span>{upcoming?.status === "live" ? "AO VIVO" : "EM BREVE"}</span>
+          </div>
+          <TeamFaceoffBadge team={opponent ?? team} record={`${Math.max(wins - 4, 1)}-${losses + 4}`} muted />
+        </div>
+        <footer>
+          <span><MapPin size={15} />{upcoming?.venue ?? `${team.city} Arena`}</span>
+          <b>Série: {team.shortName} 1-1 {opponent?.shortName ?? "OPP"}</b>
+        </footer>
+      </section>
+
+      <section className="team-module efficiency-module">
+        <header>
+          <h2><Activity size={17} />Eficiência Coletiva</h2>
+          <span>Ranking geral</span>
+        </header>
+        <EfficiencyBar label={league.sport === "football" ? "Eficiência ofensiva" : "Offensive Rating"} value="116.8" rank="#8 na liga" percent={82} color="primary" />
+        <EfficiencyBar label={league.sport === "football" ? "Solidez defensiva" : "Defensive Rating"} value="112.4" rank="#10 na liga" percent={79} color="secondary" />
+      </section>
+
+      <section className="season-leaders-section">
+        <div className="team-section-title">
+          <h2><Medal size={17} />Líderes da Temporada</h2>
+          <span>Médias / jogo</span>
+        </div>
+        <div className="leader-grid">
+          {leaderCards.map((card, index) => (
+            <article key={`${card.label}-${index}`} className="leader-card">
+              <span>{card.label}</span>
+              <div><CircleUserRound size={27} /></div>
+              <b>{shortPlayerName(card.player?.name ?? team.name)}</b>
+              <small>{card.player?.position ?? "Atleta"}</small>
+              <strong>{card.value}</strong>
+              <em>{card.unit}</em>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="team-module lineup-module">
+        <header>
+          <h2><UsersRound size={17} />Provável Titular</h2>
+          <span>Confirmado</span>
+        </header>
+        <div className="lineup-list">
+          {lineup.map((player, index) => (
+            <button key={`${player.name}-${index}`} onClick={() => player.source && onSelectPlayer(player.source)}>
+              <span>#{player.number}</span>
+              <div>
+                <b>{player.name}</b>
+                <small>{player.position} • {player.age} anos</small>
+              </div>
+              <strong>{player.stat}</strong>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="vault-bottom-actions team-vault-bottom" aria-label="Navegação do Team Vault">
+        <button className="active" onClick={onOpenVault}>
+          <Shield size={20} fill="currentColor" />
+          Vault
+        </button>
+        <button onClick={onOpenGames}>
+          <Trophy size={20} />
+          Jogos
+        </button>
+        <button onClick={onOpenSearch}>
+          <Search size={20} />
+          Explorar
+        </button>
+        <button onClick={onToggleFavorite}>
+          <Star size={20} fill={saved ? "currentColor" : "none"} />
+          Favoritos
+        </button>
+      </div>
+    </section>
+  );
+}
+function TeamFaceoffBadge({ team, record, muted }: { team: Team; record: string; muted?: boolean }) {
+  return (
+    <div className={muted ? "team-faceoff-badge muted" : "team-faceoff-badge"}>
+      <span style={{ backgroundColor: team.color }}>{team.shortName.slice(0, 3)}</span>
+      <b>{team.shortName}</b>
+      <small>{record}</small>
+    </div>
+  );
+}
+function EfficiencyBar({ label, value, rank, percent, color }: { label: string; value: string; rank: string; percent: number; color: "primary" | "secondary" }) {
+  return (
+    <div className="efficiency-row">
+      <div>
+        <span className={color} />
+        <b>{label}</b>
+        <strong>{value}</strong>
+        <small>{rank}</small>
+      </div>
+      <div className="efficiency-track">
+        <span className={color} style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
+}
+function buildLineup(players: Player[], team: Team) {
+  const fallbacks = [
+    { name: `${team.shortName} Armador`, position: "Armador", age: 28, stat: "18.0 PPG", number: 1 },
+    { name: `${team.shortName} Ala`, position: "Ala", age: 26, stat: "15.9 PPG", number: 15 },
+    { name: `${team.shortName} Pivô`, position: "Pivô", age: 29, stat: "13.6 PPG", number: 28 },
+    { name: `${team.shortName} Capitão`, position: "Capitão", age: 31, stat: "25.2 PPG", number: 23 },
+    { name: `${team.shortName} Sexto Homem`, position: "Reserva", age: 24, stat: "12.4 PPG", number: 3 },
+  ];
+
+  return fallbacks.map((fallback, index) => {
+    const source = players[index] ?? players[index % Math.max(players.length, 1)];
+    return {
+      age: source?.age ?? fallback.age,
+      name: source?.name ?? fallback.name,
+      number: fallback.number,
+      position: source?.position ?? fallback.position,
+      source,
+      stat: source?.seasons[0] ? `${source.seasons[0].goals || source.seasons[0].assists || source.seasons[0].appearances} destaque` : fallback.stat,
+    };
+  });
+}
+function formatShortKickoff(startsAt: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    timeZone: "UTC",
+  }).format(new Date(startsAt));
+}
+function shortPlayerName(name: string) {
+  const parts = name.split(" ");
+  return parts.length > 1 ? `${parts[0][0]}. ${parts.at(-1)}` : name;
 }
 function TeamCard({
   team,
