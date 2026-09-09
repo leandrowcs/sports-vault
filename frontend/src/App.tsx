@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import {
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Bot,
   CalendarDays,
   ChevronRight,
+  CircleUserRound,
   Compass,
   Heart,
   Home,
   LogIn,
   LogOut,
+  Menu,
+  Shield,
   Search,
+  Sparkles,
+  Star,
   Trophy,
 } from "lucide-react";
 import "./App.css";
@@ -21,6 +30,7 @@ import {
 } from "./services/vaultStore";
 import type {
   League,
+  GameStatus,
   Player,
   SportCode,
   SportEvent,
@@ -149,7 +159,6 @@ function App() {
   }
   const team = (id: string) => data.teams.find((item) => item.id === id)!;
   const league = (id: string) => data.leagues.find((item) => item.id === id)!;
-  const upcoming = data.events.filter((event) => event.status === "scheduled");
   const favorites = data.teams.filter((item) =>
     vault.teamIds.includes(item.id),
   );
@@ -243,68 +252,17 @@ function App() {
           </p>
         )}
         {view === "home" && (
-          <>
-            <section className="hero-panel">
-              <div>
-                <p className="eyebrow">PRÓXIMO DESTAQUE</p>
-                <h2>
-                  Uma semana cheia
-                  <br />
-                  para acompanhar.
-                </h2>
-                <button
-                  className="primary-button"
-                  onClick={() => setView("games")}
-                >
-                  Ver agenda <ChevronRight size={17} />
-                </button>
-              </div>
-              <div className="hero-stats">
-                <span>
-                  <b>{upcoming.length}</b> próximos jogos
-                </span>
-                <span>
-                  <b>{favorites.length}</b> times salvos
-                </span>
-              </div>
-            </section>
-            <SectionTitle
-              title="Próximos jogos"
-              action="Agenda completa"
-              onAction={() => setView("games")}
-            />
-            <div className="event-grid">
-              {upcoming.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  home={team(event.homeTeamId)}
-                  away={team(event.awayTeamId)}
-                  competition={league(event.leagueId)}
-                  onSelect={setSelectedEvent}
-                />
-              ))}
-            </div>
-            <SectionTitle
-              title="Na sua biblioteca"
-              action="Abrir Meu Vault"
-              onAction={() => setView("vault")}
-            />
-            <div className="team-grid">
-              {(favorites.length ? favorites : data.teams.slice(0, 4)).map(
-                (item) => (
-                  <TeamCard
-                    key={item.id}
-                    team={item}
-                    league={league(item.leagueId)}
-                    saved={vault.teamIds.includes(item.id)}
-                    onToggle={toggleTeam}
-                    onSelect={setSelectedTeam}
-                  />
-                ),
-              )}
-            </div>
-          </>
+          <VaultFeedHome
+            events={data.events}
+            favorites={favorites}
+            players={data.players}
+            getTeam={team}
+            getLeague={league}
+            onOpenGames={() => setView("games")}
+            onOpenVault={() => setView("vault")}
+            onOpenSearch={() => setView("search")}
+            onSelectEvent={setSelectedEvent}
+          />
         )}
         {view === "games" && (
           <>
@@ -590,6 +548,317 @@ function SectionTitle({
         </button>
       )}
     </div>
+  );
+}
+function VaultFeedHome({
+  events,
+  favorites,
+  players,
+  getTeam,
+  getLeague,
+  onOpenGames,
+  onOpenVault,
+  onOpenSearch,
+  onSelectEvent,
+}: {
+  events: SportEvent[];
+  favorites: Team[];
+  players: Player[];
+  getTeam: (id: string) => Team;
+  getLeague: (id: string) => League;
+  onOpenGames: () => void;
+  onOpenVault: () => void;
+  onOpenSearch: () => void;
+  onSelectEvent: (event: SportEvent) => void;
+}) {
+  const liveEvents = events.filter((event) => event.status === "live");
+  const featuredEvents = [
+    ...liveEvents,
+    ...events.filter((event) => event.status === "scheduled"),
+    ...events.filter((event) => event.status === "finished"),
+  ].slice(0, 4);
+  const featuredPlayer = players[0];
+  const featuredTeam = featuredPlayer ? getTeam(featuredPlayer.teamId) : favorites[0];
+  const featuredLeague = featuredTeam ? getLeague(featuredTeam.leagueId) : null;
+  const topFootballTeams = favorites.length ? favorites.slice(0, 3) : featuredEvents.map((event) => getTeam(event.homeTeamId)).slice(0, 3);
+  const topPlayers = players.slice(0, 2);
+
+  return (
+    <section className="vault-feed-home" aria-label="The Vault Feed">
+      <div className="vault-mobile-topbar">
+        <div className="vault-mobile-brand">
+          <button className="icon-button" aria-label="Menu principal">
+            <Menu size={20} />
+          </button>
+          <Shield size={20} className="vault-shield" fill="currentColor" />
+          <b>SPORTS VAULT</b>
+        </div>
+        <div className="vault-mobile-actions">
+          <button className="icon-button notification-button" aria-label="Notificações">
+            <Bell size={20} />
+            <span />
+          </button>
+          <CircleUserRound size={28} />
+        </div>
+      </div>
+
+      <nav className="sport-filter-strip" aria-label="Filtros por esporte">
+        <button className="sport-filter active">
+          <span className="filter-dot" />
+          Para Você
+        </button>
+        <button className="sport-filter live">
+          <span className="live-dot" />
+          Ao Vivo ({liveEvents.length})
+        </button>
+        <button className="sport-filter">
+          <Trophy size={14} />
+          Futebol
+        </button>
+        <button className="sport-filter">
+          <Trophy size={14} />
+          NBA
+        </button>
+        <button className="sport-filter">
+          <Trophy size={14} />
+          NFL
+        </button>
+      </nav>
+
+      <div className="vault-feed-section-heading">
+        <div>
+          <span className="filter-dot pulse" />
+          <h2>Jogos Ao Vivo & Destaque</h2>
+        </div>
+        <span>{Math.max(liveEvents.length, 1)} ativos</span>
+      </div>
+      {featuredEvents.length ? (
+        <div className="featured-match-carousel">
+          {featuredEvents.map((event) => (
+            <FeaturedMatchCard
+              key={event.id}
+              event={event}
+              home={getTeam(event.homeTeamId)}
+              away={getTeam(event.awayTeamId)}
+              league={getLeague(event.leagueId)}
+              player={topPlayers.find((item) => item.teamId === event.homeTeamId || item.teamId === event.awayTeamId)}
+              onSelect={onSelectEvent}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state compact-empty">
+          <Trophy size={25} />
+          <h3>Nenhum jogo disponível.</h3>
+          <p>Volte em breve para acompanhar a rodada.</p>
+        </div>
+      )}
+
+      <section className="vault-alert-card">
+        <div className="vault-feed-section-heading inline-heading">
+          <div>
+            <Bot size={18} />
+            <h2>Alertas do seu Vault</h2>
+          </div>
+          <span>Inteligência preditiva</span>
+        </div>
+        <article>
+          <div>
+            <span className="insight-badge">
+              <Sparkles size={13} fill="currentColor" />
+              Estatística histórica
+            </span>
+            <h3>
+              {featuredPlayer?.name ?? "Seu time favorito"} entrou no radar com destaque de desempenho nesta temporada.
+            </h3>
+            <p>
+              O Vault cruza jogos recentes, forma dos atletas e contexto da liga para destacar sinais importantes antes da rodada.
+            </p>
+          </div>
+          <div className="alert-thumb">
+            <span>{featuredTeam?.shortName.slice(0, 2) ?? "SV"}</span>
+          </div>
+        </article>
+        <footer>
+          <span>Radar de jogador • {featuredTeam?.name ?? "Sports Vault"}</span>
+          <button onClick={onOpenSearch}>
+            Explorar métricas <ArrowRight size={14} />
+          </button>
+        </footer>
+      </section>
+
+      <section className="quick-standings">
+        <div className="vault-feed-section-heading inline-heading">
+          <div>
+            <h2>Classificações Rápidas</h2>
+          </div>
+          <button onClick={onOpenGames}>
+            Ver tabela completa <ChevronRight size={14} />
+          </button>
+        </div>
+        <div className="standings-card">
+          <MiniStanding title={featuredLeague?.name ?? "Vault League"} teams={topFootballTeams} />
+          <MiniStanding title="Favoritos" teams={favorites.slice(0, 3)} emptyText="Nenhum favorito salvo" />
+        </div>
+      </section>
+
+      <section className="insights-feed">
+        <div className="vault-feed-section-heading inline-heading">
+          <div>
+            <BarChart3 size={18} />
+            <h2>Análises & Insights</h2>
+          </div>
+          <span>Feed editorial</span>
+        </div>
+        <div className="analysis-list">
+          <AnalysisCard
+            tag="Tática • Futebol"
+            title="Como a pressão alta muda a saída de bola nos grandes jogos"
+            byline="Por Redação Vault IA"
+            tone="green"
+          />
+          <AnalysisCard
+            tag="NBA • Advanced Metrics"
+            title="O impacto do espaçamento ofensivo no clutch time"
+            byline="Por Lucas Albuquerque"
+            tone="blue"
+          />
+        </div>
+      </section>
+
+      <div className="vault-bottom-actions" aria-label="Navegação rápida da home">
+        <button className="active" onClick={onOpenVault}>
+          <Shield size={20} fill="currentColor" />
+          Vault
+        </button>
+        <button onClick={onOpenGames}>
+          <Trophy size={20} />
+          Jogos
+        </button>
+        <button onClick={onOpenSearch}>
+          <Search size={20} />
+          Explorar
+        </button>
+        <button onClick={onOpenVault}>
+          <Star size={20} />
+          Favoritos
+        </button>
+      </div>
+    </section>
+  );
+}
+function FeaturedMatchCard({
+  event,
+  home,
+  away,
+  league,
+  player,
+  onSelect,
+}: {
+  event: SportEvent;
+  home: Team;
+  away: Team;
+  league: League;
+  player?: Player;
+  onSelect: (event: SportEvent) => void;
+}) {
+  const kickoff = new Intl.DateTimeFormat("pt-BR", {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  }).format(new Date(event.startsAt));
+  const possession = Math.min(68, Math.max(38, 50 + (home.shortName.length - away.shortName.length) * 4));
+
+  return (
+    <article className="featured-match-card" onClick={() => onSelect(event)}>
+      <div className="match-accent" style={{ backgroundColor: league.color }} />
+      <header>
+        <span>
+          <Trophy size={14} />
+          {league.name}
+        </span>
+        <b className={event.status === "live" ? "live-badge" : "time-badge"}>
+          {event.status === "live" ? "AO VIVO" : event.status === "finished" ? "Encerrado" : kickoff}
+        </b>
+      </header>
+      <div className="featured-scoreboard">
+        <TeamScoreRow team={home} score={event.homeScore} status={event.status} highlight />
+        <TeamScoreRow team={away} score={event.awayScore} status={event.status} />
+      </div>
+      {event.status === "live" ? (
+        <div className="match-meter-box">
+          <div className="meter-labels">
+            <span>{possession}%</span>
+            <span>Posse de bola</span>
+            <span>{100 - possession}%</span>
+          </div>
+          <div className="split-meter">
+            <span style={{ width: `${possession}%`, backgroundColor: home.color }} />
+            <span style={{ width: `${100 - possession}%`, backgroundColor: away.color }} />
+          </div>
+        </div>
+      ) : (
+        <div className="player-highlight">
+          <span>{player?.name.slice(0, 2).toUpperCase() ?? home.shortName.slice(0, 2)}</span>
+          <div>
+            <b>{player?.name ?? home.name}</b>
+            <small>{player?.position ?? event.venue}</small>
+          </div>
+          <strong>{event.status === "finished" ? "Resultado" : "Pré-jogo"}</strong>
+        </div>
+      )}
+    </article>
+  );
+}
+function TeamScoreRow({ team, score, status, highlight }: { team: Team; score?: number; status: GameStatus; highlight?: boolean }) {
+  return (
+    <div className="team-score-row">
+      <div>
+        <span className="mini-crest" style={{ backgroundColor: team.color }}>
+          {team.shortName.slice(0, 2)}
+        </span>
+        <b>{team.name}</b>
+      </div>
+      <strong className={highlight ? "highlight" : ""}>{status === "scheduled" ? "vs" : score ?? 0}</strong>
+    </div>
+  );
+}
+function MiniStanding({ title, teams, emptyText = "Sem dados" }: { title: string; teams: Team[]; emptyText?: string }) {
+  return (
+    <div className="mini-standing">
+      <header>
+        <span>{title}</span>
+        <small>P • J • SG</small>
+      </header>
+      {teams.length ? (
+        teams.map((team, index) => (
+          <div key={team.id} className="standing-row">
+            <span>{index + 1}</span>
+            <b>{team.name}</b>
+            <small>{34 - index * 4}</small>
+            <small>{14 - index}</small>
+            <small>+{18 - index * 5}</small>
+          </div>
+        ))
+      ) : (
+        <p className="standing-empty">{emptyText}</p>
+      )}
+    </div>
+  );
+}
+function AnalysisCard({ tag, title, byline, tone }: { tag: string; title: string; byline: string; tone: "green" | "blue" }) {
+  return (
+    <article className="analysis-card">
+      <div className={`analysis-thumb ${tone}`}>
+        <BarChart3 size={24} />
+      </div>
+      <div>
+        <span>{tag}</span>
+        <h3>{title}</h3>
+        <p>{byline}</p>
+      </div>
+    </article>
   );
 }
 function TeamCard({
