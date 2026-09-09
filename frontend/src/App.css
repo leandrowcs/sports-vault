@@ -11,6 +11,9 @@
   --vault-navy: #0d1730;
   --vault-success: #34d399;
 }
+* {
+  box-sizing: border-box;
+}
 .app-shell {
   min-height: 100svh;
   display: flex;
@@ -2357,13 +2360,19 @@
   }
   .vault-feed-home {
     max-width: 430px;
-    margin: -25px -18px -88px;
+    width: 100%;
+    margin: 0;
     padding: 58px 0 88px;
     background: #0f131c;
     min-height: 100svh;
   }
-  .content:has(.vault-feed-home) {
-    padding-top: 25px;
+  .content:has(.vault-feed-home),
+  .content:has(.team-vault-page),
+  .content:has(.player-vault-page) {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 0 0 88px;
   }
   .content:has(.vault-feed-home) > .topbar {
     display: none;
@@ -2371,8 +2380,9 @@
   .vault-mobile-topbar {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    width: min(430px, 100vw);
+    transform: translateX(-50%);
     z-index: 20;
     display: flex;
     align-items: center;
@@ -2494,9 +2504,10 @@
   }
   .vault-bottom-actions {
     position: fixed;
-    right: 0;
     bottom: 0;
-    left: 0;
+    left: 50%;
+    width: min(430px, 100vw);
+    transform: translateX(-50%);
     z-index: 20;
     display: flex;
     justify-content: space-around;
@@ -2524,19 +2535,18 @@
   }
   .team-vault-page {
     max-width: 430px;
-    margin: -25px -18px -88px;
+    width: 100%;
+    margin: 0;
     padding: 64px 16px 88px;
     min-height: 100svh;
     background: #0f131c;
   }
-  .content:has(.team-vault-page) {
-    padding-top: 25px;
-  }
   .team-vault-topbar {
     position: fixed;
     top: 0;
-    right: 0;
-    left: 0;
+    left: 50%;
+    width: min(430px, 100vw);
+    transform: translateX(-50%);
     z-index: 20;
     height: 56px;
     padding: 0 10px;
@@ -2575,19 +2585,18 @@
   }
   .player-vault-page {
     max-width: 430px;
-    margin: -25px -18px -88px;
+    width: 100%;
+    margin: 0;
     padding: 66px 16px 88px;
     min-height: 100svh;
     background: #0f131c;
   }
-  .content:has(.player-vault-page) {
-    padding-top: 25px;
-  }
   .player-vault-topbar {
     position: fixed;
     top: 0;
-    right: 0;
-    left: 0;
+    left: 50%;
+    width: min(430px, 100vw);
+    transform: translateX(-50%);
     z-index: 20;
     height: 56px;
     padding: 0 16px;
