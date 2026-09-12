@@ -4,6 +4,16 @@ export type View = 'home' | 'vault' | 'games' | 'search'
 export interface League { id: string; name: string; country: string; sport: SportCode; season: string; color: string }
 export interface Team { id: string; name: string; shortName: string; leagueId: string; city: string; color: string }
 export interface SportEvent { id: string; leagueId: string; homeTeamId: string; awayTeamId: string; startsAt: string; status: GameStatus; venue: string; homeScore?: number; awayScore?: number }
+export interface EventSummaryStat { key: string; label: string; homeValue: string; awayValue: string }
+export interface EventSummaryLeader { key: string; label: string; homeValue: string; awayValue: string }
+export interface SportEventSummary {
+  eventId: string
+  sport: SportCode
+  shortStatus?: string
+  note?: string
+  statistics: EventSummaryStat[]
+  leaders: EventSummaryLeader[]
+}
 export interface PlayerSeasonStats {
   season: string
   competitionId: string

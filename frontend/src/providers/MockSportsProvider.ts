@@ -1,4 +1,4 @@
-import type { League, Player, SportEvent, Team } from '../types/sports'
+import type { League, Player, SportEvent, SportEventSummary, Team } from '../types/sports'
 import type { SportsProvider } from './SportsProvider'
 const leagues: League[] = [
   { id: 'premier-league', name: 'Premier League', country: 'Inglaterra', sport: 'football', season: '2026/27', color: '#5b21b6' }, { id: 'la-liga', name: 'LaLiga', country: 'Espanha', sport: 'football', season: '2026/27', color: '#ef4444' }, { id: 'champions-league', name: 'UEFA Champions League', country: 'Europa', sport: 'football', season: '2026/27', color: '#1d4ed8' }, { id: 'nba', name: 'NBA', country: 'Estados Unidos', sport: 'basketball', season: '2026/27', color: '#ea580c' }, { id: 'nfl', name: 'NFL', country: 'Estados Unidos', sport: 'american_football', season: '2026/27', color: '#7c2d12' },
@@ -29,4 +29,85 @@ const players: Player[] = [
     }],
   },
 ]
-export const mockSportsProvider: SportsProvider = { async getLeagues() { return leagues }, async getTeams() { return teams }, async getEvents() { return events }, async getPlayers() { return players } }
+const eventSummaries: Record<string, SportEventSummary> = {
+  'event-4': {
+    eventId: 'event-4',
+    sport: 'football',
+    shortStatus: 'Encerrado',
+    note: 'PSG controlou o meio-campo e definiu o jogo com mais volume ofensivo.',
+    statistics: [
+      { key: 'goals', label: 'Gols', homeValue: '2', awayValue: '1' },
+      { key: 'shots', label: 'Chutes', homeValue: '15', awayValue: '9' },
+      { key: 'shots-on-target', label: 'Chutes no gol', homeValue: '7', awayValue: '4' },
+      { key: 'possession', label: 'Posse de bola', homeValue: '58%', awayValue: '42%' },
+      { key: 'passes', label: 'Passes certos', homeValue: '512', awayValue: '381' },
+      { key: 'yellow-cards', label: 'Cartões amarelos', homeValue: '2', awayValue: '3' },
+    ],
+    leaders: [
+      { key: 'top-scorer', label: 'Artilheiro', homeValue: 'Mbappé · 1 gol', awayValue: 'Kane · 1 gol' },
+      { key: 'creator', label: 'Criador', homeValue: 'Dembélé · 4 chances', awayValue: 'Musiala · 3 chances' },
+    ],
+  },
+  'event-6': {
+    eventId: 'event-6',
+    sport: 'football',
+    shortStatus: 'Ao vivo',
+    note: 'Arsenal pressiona mais, mas Liverpool responde em transições rápidas.',
+    statistics: [
+      { key: 'goals', label: 'Gols', homeValue: '1', awayValue: '1' },
+      { key: 'shots', label: 'Chutes', homeValue: '11', awayValue: '8' },
+      { key: 'shots-on-target', label: 'Chutes no gol', homeValue: '5', awayValue: '3' },
+      { key: 'possession', label: 'Posse de bola', homeValue: '61%', awayValue: '39%' },
+      { key: 'passes', label: 'Passes certos', homeValue: '347', awayValue: '228' },
+      { key: 'yellow-cards', label: 'Cartões amarelos', homeValue: '1', awayValue: '2' },
+    ],
+    leaders: [
+      { key: 'top-scorer', label: 'Artilheiro', homeValue: 'Saka · 1 gol', awayValue: 'Salah · 1 gol' },
+      { key: 'duels', label: 'Duelos ganhos', homeValue: 'Rice · 7', awayValue: 'Mac Allister · 6' },
+    ],
+  },
+  'event-3': {
+    eventId: 'event-3',
+    sport: 'basketball',
+    shortStatus: 'Pré-jogo',
+    note: 'Confronto de alto pace com vantagem no perímetro para Boston.',
+    statistics: [
+      { key: 'points', label: 'Média de pontos', homeValue: '118.7', awayValue: '114.1' },
+      { key: 'three-point', label: '3PT convertidos', homeValue: '15.8', awayValue: '13.2' },
+      { key: 'paint', label: 'Pontos no garrafão', homeValue: '49.4', awayValue: '46.1' },
+      { key: 'free-throws', label: 'Lances livres', homeValue: '82%', awayValue: '79%' },
+      { key: 'rebounds', label: 'Rebotes', homeValue: '45.6', awayValue: '43.8' },
+      { key: 'turnovers', label: 'Turnovers', homeValue: '11.9', awayValue: '13.4' },
+    ],
+    leaders: [
+      { key: 'scoring', label: 'Pontuador', homeValue: 'Tatum · 29.8 PTS', awayValue: 'Dončić · 31.1 PTS' },
+      { key: 'three-threat', label: 'Ameaça do perímetro', homeValue: 'Brown · 2.8 3PT', awayValue: 'Reaves · 2.6 3PT' },
+    ],
+  },
+  'event-5': {
+    eventId: 'event-5',
+    sport: 'american_football',
+    shortStatus: 'Pré-jogo',
+    note: 'Ataque aéreo dos Chiefs enfrenta defesa física e agressiva dos 49ers.',
+    statistics: [
+      { key: 'touchdowns', label: 'Touchdowns por jogo', homeValue: '3.1', awayValue: '2.8' },
+      { key: 'passing-yards', label: 'Jardas aéreas', homeValue: '287', awayValue: '246' },
+      { key: 'rushing-yards', label: 'Jardas terrestres', homeValue: '104', awayValue: '136' },
+      { key: 'turnovers', label: 'Turnovers forçados', homeValue: '1.6', awayValue: '1.9' },
+      { key: 'field-goals', label: 'Kicks convertidos', homeValue: '2.1', awayValue: '1.8' },
+      { key: 'sacks', label: 'Sacks', homeValue: '2.4', awayValue: '3.1' },
+    ],
+    leaders: [
+      { key: 'qb', label: 'QB em destaque', homeValue: 'Mahomes · 2.4 TD', awayValue: 'Purdy · 2.1 TD' },
+      { key: 'takeaways', label: 'Takeaways', homeValue: 'McDuffie · 3 INT', awayValue: 'Warner · 2 FF' },
+    ],
+  },
+}
+
+export const mockSportsProvider: SportsProvider = {
+  async getLeagues() { return leagues },
+  async getTeams() { return teams },
+  async getEvents() { return events },
+  async getPlayers() { return players },
+  async getEventSummary(event) { return eventSummaries[event.id] ?? null },
+}

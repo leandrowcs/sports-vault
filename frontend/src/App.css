@@ -10,6 +10,7 @@
   --vault-focus: #60a5fa;
   --vault-navy: #0d1730;
   --vault-success: #34d399;
+  --vault-mobile-shell-width: min(448px, 100vw);
 }
 * {
   box-sizing: border-box;
@@ -464,6 +465,29 @@
 .compare-box { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--vault-border); display: grid; gap: 10px; }
 .compare-box label { display: grid; gap: 5px; color: var(--vault-muted); font-size: 11px; font-weight: 700; }
 .compare-box select { border: 1px solid var(--vault-border); border-radius: 6px; background: var(--vault-surface); color: var(--vault-ink); padding: 9px 11px; font: inherit; }
+.event-summary-panel { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--vault-border); }
+.event-summary-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.event-summary-header .player-section-title { margin: 0; }
+.event-summary-header span { color: var(--vault-success); text-transform: uppercase; font-size: 10px; font-weight: 900; letter-spacing: .06em; }
+.event-summary-note { margin: 0 0 14px; color: var(--vault-muted); font-size: 12px; line-height: 1.6; }
+.event-summary-table { display: grid; gap: 8px; }
+.event-summary-team-headings,
+.event-summary-row { display: grid; grid-template-columns: minmax(0, 72px) minmax(0, 1fr) minmax(0, 72px); align-items: center; gap: 10px; }
+.event-summary-team-headings { color: var(--vault-muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.event-summary-team-headings span:nth-child(2),
+.event-summary-row span { text-align: center; }
+.event-summary-team-headings span:last-child,
+.event-summary-row b:last-child { text-align: right; }
+.event-summary-row { padding: 10px 12px; border: 1px solid var(--vault-border); border-radius: 8px; background: rgba(11, 18, 32, .72); }
+.event-summary-row b { font: 500 14px "DM Mono", monospace; color: var(--vault-ink); }
+.event-summary-row span { color: var(--vault-muted); font-size: 11px; font-weight: 700; }
+.event-leader-grid { display: grid; gap: 10px; }
+.event-leader-card { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--vault-border); border-radius: 8px; background: rgba(11, 18, 32, .72); }
+.event-leader-card span { color: var(--vault-success); text-transform: uppercase; font-size: 10px; font-weight: 900; letter-spacing: .06em; }
+.event-leader-card b,
+.event-leader-card small { display: block; overflow-wrap: anywhere; }
+.event-leader-card b { color: var(--vault-ink); font-size: 13px; }
+.event-leader-card small { color: var(--vault-muted); font-size: 12px; }
 .h2h-dialog { max-height: 86vh; overflow-y: auto; }
 .h2h-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .h2h-title span { color: var(--vault-muted); font-size: 14px; font-weight: 500; }
@@ -2466,7 +2490,7 @@
     position: fixed;
     bottom: 0;
     left: 50%;
-    width: min(430px, 100vw);
+    width: var(--vault-mobile-shell-width);
     height: 66px;
     transform: translateX(-50%);
     background: rgba(15, 19, 28, .94);
@@ -2500,7 +2524,7 @@
     display: none;
   }
   .vault-feed-home {
-    max-width: 430px;
+    max-width: var(--vault-mobile-shell-width);
     width: 100%;
     margin: 0;
     padding: 58px 0 88px;
@@ -2522,7 +2546,7 @@
     position: fixed;
     top: 0;
     left: 50%;
-    width: min(430px, 100vw);
+    width: var(--vault-mobile-shell-width);
     transform: translateX(-50%);
     z-index: 20;
     display: flex;
@@ -2660,7 +2684,7 @@
     display: none;
   }
   .team-vault-page {
-    max-width: 430px;
+    max-width: var(--vault-mobile-shell-width);
     width: 100%;
     margin: 0;
     padding: 64px 16px 88px;
@@ -2671,7 +2695,7 @@
     position: fixed;
     top: 0;
     left: 50%;
-    width: min(430px, 100vw);
+    width: var(--vault-mobile-shell-width);
     transform: translateX(-50%);
     z-index: 20;
     height: 56px;
@@ -2710,7 +2734,7 @@
     display: none;
   }
   .player-vault-page {
-    max-width: 430px;
+    max-width: var(--vault-mobile-shell-width);
     width: 100%;
     margin: 0;
     padding: 66px 16px 88px;
@@ -2721,7 +2745,7 @@
     position: fixed;
     top: 0;
     left: 50%;
-    width: min(430px, 100vw);
+    width: var(--vault-mobile-shell-width);
     transform: translateX(-50%);
     z-index: 20;
     height: 56px;

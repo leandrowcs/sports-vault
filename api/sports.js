@@ -216,6 +216,212 @@ function normalizeEvent(event, leagueId) {
   };
 }
 
+function getLeagueDefinition(leagueId) {
+  return leagueDefs.find((def) => def.id === leagueId) ?? null;
+}
+
+function stripLeaguePrefix(value, leagueId) {
+  if (typeof value !== "string") return "";
+  return value.startsWith(`${leagueId}-`) ? value.slice(leagueId.length + 1) : value;
+}
+
+function normalizeKey(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/gi, "")
+    .toLowerCase();
+}
+
+function getDisplayValue(stat) {
+  if (stat?.displayValue != null) return String(stat.displayValue);
+  if (stat?.value != null) return String(stat.value);
+  if (stat?.display != null) return String(stat.display);
+  return "";
+}
+
+function collectStatEntries(items, bucket = []) {
+  if (!Array.isArray(items)) return bucket;
+
+  items.forEach((item) => {
+    if (!item || typeof item !== "object") return;
+
+    if (item.name || item.displayName || item.label) {
+      const value = getDisplayValue(item);
+
+      if (value) {
+        bucket.push({
+          key: normalizeKey(item.name || item.displayName || item.label),
+          label: item.displayName || item.label || item.name,
+          value,
+        });
+      }
+    }
+
+    collectStatEntries(item.stats, bucket);
+    collectStatEntries(item.statistics, bucket);
+  });
+
+  return bucket;
+}
+
+function findStatValue(entries, aliases) {
+  const normalizedAliases = aliases.map(normalizeKey);
+  const match = entries.find((entry) => normalizedAliases.includes(entry.key));
+  return match?.value ?? "";
+}
+
+function buildEventSummaryStats(def, competition, homeStats, awayStats) {
+  const scoreFallback = (side) => String(side === "home" ? Number(competition?.competitors?.find((item) => item.homeAway === "home")?.score ?? 0) : Number(competition?.competitors?.find((item) => item.homeAway === "away")?.score ?? 0));
+  const configs = {
+    football: [
+      { key: "goals", label: "Gols", aliases: ["goals", "totalGoals", "score"], fallback: scoreFallback },
+      { key: "shots", label: "Chutes", aliases: ["shots", "totalShots", "shotsTotal"] },
+      { key: "shots-on-target", label: "Chutes no gol", aliases: ["shotsOnTarget", "shotsOnGoal", "ontargetscoringattempts"] },
+      { key: "possession", label: "Posse de bola", aliases: ["possessionPct", "possessionPercentage", "possession"] },
+      { key: "passes", label: "Passes certos", aliases: ["accuratePasses", "successfulPasses", "passesAccurate", "completedPasses"] },
+      { key: "yellow-cards", label: "Cartões amarelos", aliases: ["yellowCards"] },
+      { key: "red-cards", label: "Cartões vermelhos", aliases: ["redCards"] },
+    ],
+    basketball: [
+      { key: "points", label: "Pontos", aliases: ["points", "score"], fallback: scoreFallback },
+      { key: "field-goal-pct", label: "FG%", aliases: ["fieldGoalPct", "fieldGoalsPercentage", "fieldgoalpct"] },
+      { key: "three-point-pct", label: "3PT%", aliases: ["threePointFieldGoalPct", "threePointPct", "threePointPercentage"] },
+      { key: "free-throw-pct", label: "LL%", aliases: ["freeThrowPct", "freeThrowsPercentage", "freethrowpct"] },
+      { key: "rebounds", label: "Rebotes", aliases: ["rebounds", "totalRebounds"] },
+      { key: "assists", label: "Assistências", aliases: ["assists"] },
+      { key: "paint", label: "Pontos no garrafão", aliases: ["pointsInPaint", "paintPoints"] },
+      { key: "turnovers", label: "Turnovers", aliases: ["turnovers"] },
+    ],
+    american_football: [
+      { key: "touchdowns", label: "Touchdowns", aliases: ["touchdowns", "totalTouchdowns"] },
+      { key: "passing-yards", label: "Jardas aéreas", aliases: ["passingYards", "netPassingYards"] },
+      { key: "rushing-yards", label: "Jardas terrestres", aliases: ["rushingYards"] },
+      { key: "total-yards", label: "Jardas totais", aliases: ["totalYards"] },
+      { key: "turnovers", label: "Turnovers", aliases: ["turnovers", "turnoversLost"] },
+      { key: "field-goals", label: "Field goals", aliases: ["fieldGoals", "fieldGoalsMade"] },
+      { key: "sacks", label: "Sacks", aliases: ["sacks"] },
+      { key: "third-down", label: "3rd down", aliases: ["thirdDownEff", "thirdDownConversions", "thirddownefficiency"] },
+    ],
+  }[def.sport] ?? [];
+
+  return configs
+    .map((config) => {
+      const homeValue = findStatValue(homeStats, config.aliases) || (config.fallback ? config.fallback("home") : "");
+      const awayValue = findStatValue(awayStats, config.aliases) || (config.fallback ? config.fallback("away") : "");
+
+      if (!homeValue && !awayValue) return null;
+
+      return {
+        key: config.key,
+        label: config.label,
+        homeValue,
+        awayValue,
+      };
+    })
+    .filter(Boolean);
+}
+
+function collectLeaderEntries(leaders = []) {
+  return leaders
+    .map((leader) => {
+      const item = leader?.leaders?.[0];
+      const athlete = item?.athlete;
+      const fragments = [athlete?.displayName || athlete?.shortName, item?.displayValue || item?.displayValueShort]
+        .filter(Boolean);
+      const value = fragments.join(" · ") || leader?.displayValue || "";
+
+      if (!value) return null;
+
+      return {
+        key: normalizeKey(leader?.name || leader?.displayName || leader?.shortDisplayName),
+        label: leader?.displayName || leader?.shortDisplayName || leader?.name || "Destaque",
+        value,
+      };
+    })
+    .filter(Boolean);
+}
+
+function findLeaderValue(entries, aliases) {
+  const normalizedAliases = aliases.map(normalizeKey);
+  const match = entries.find((entry) => normalizedAliases.includes(entry.key));
+  return match?.value ?? "";
+}
+
+function buildEventSummaryLeaders(def, competitors) {
+  const homeCompetitor = competitors.find((item) => item.homeAway === "home");
+  const awayCompetitor = competitors.find((item) => item.homeAway === "away");
+  const homeLeaders = collectLeaderEntries(homeCompetitor?.leaders);
+  const awayLeaders = collectLeaderEntries(awayCompetitor?.leaders);
+  const configs = {
+    football: [
+      { key: "scoring", label: "Artilheiro", aliases: ["goals", "scoring", "goalsscored"] },
+      { key: "assists", label: "Assistências", aliases: ["assists", "goalassists"] },
+      { key: "shots", label: "Finalizações", aliases: ["shots", "shotsontarget"] },
+    ],
+    basketball: [
+      { key: "points", label: "Pontuador", aliases: ["points", "scoring"] },
+      { key: "rebounds", label: "Rebotes", aliases: ["rebounds"] },
+      { key: "assists", label: "Assistências", aliases: ["assists"] },
+      { key: "three-point", label: "Perímetro", aliases: ["threePointFieldGoalsMade", "threepointsmade", "3pt"] },
+    ],
+    american_football: [
+      { key: "touchdowns", label: "Touchdowns", aliases: ["touchdowns", "totaltouchdowns"] },
+      { key: "passing", label: "Jogo aéreo", aliases: ["passing", "passingyards"] },
+      { key: "rushing", label: "Jogo terrestre", aliases: ["rushing", "rushingyards"] },
+      { key: "receiving", label: "Recepções", aliases: ["receiving", "receivingyards"] },
+    ],
+  }[def.sport] ?? [];
+
+  return configs
+    .map((config) => {
+      const homeValue = findLeaderValue(homeLeaders, config.aliases);
+      const awayValue = findLeaderValue(awayLeaders, config.aliases);
+
+      if (!homeValue && !awayValue) return null;
+
+      return {
+        key: config.key,
+        label: config.label,
+        homeValue,
+        awayValue,
+      };
+    })
+    .filter(Boolean);
+}
+
+async function loadEventSummary(leagueId, eventId) {
+  const def = getLeagueDefinition(leagueId);
+  if (!def) return null;
+
+  const rawEventId = stripLeaguePrefix(eventId, leagueId);
+  if (!rawEventId) return null;
+
+  const payload = await espnFetch(`/${def.espnSport}/${def.espnLeague}/summary?event=${rawEventId}`);
+  const competition = payload.header?.competitions?.[0];
+  const competitors = competition?.competitors ?? [];
+  const boxscoreTeams = payload.boxscore?.teams ?? [];
+  const homeCompetitor = competitors.find((item) => item.homeAway === "home");
+  const awayCompetitor = competitors.find((item) => item.homeAway === "away");
+  const homeStats = collectStatEntries(
+    boxscoreTeams.find((item) => String(item?.team?.id ?? "") === String(homeCompetitor?.id ?? ""))?.statistics,
+  );
+  const awayStats = collectStatEntries(
+    boxscoreTeams.find((item) => String(item?.team?.id ?? "") === String(awayCompetitor?.id ?? ""))?.statistics,
+  );
+  const statistics = buildEventSummaryStats(def, competition, homeStats, awayStats);
+  const leaders = buildEventSummaryLeaders(def, competitors);
+
+  return {
+    eventId,
+    sport: def.sport,
+    shortStatus: competition?.status?.type?.shortDetail || competition?.status?.type?.description || "",
+    note: payload.news?.[0]?.headline || competition?.status?.type?.detail || "",
+    statistics,
+    leaders,
+  };
+}
+
 async function loadLeagueData(def) {
   const today = new Date();
   const from = formatDate(addDays(today, -3));
@@ -278,6 +484,26 @@ module.exports = async function handler(request, response) {
   }
 
   try {
+    if (request.query?.type === "summary") {
+      const eventId = typeof request.query.eventId === "string" ? request.query.eventId : "";
+      const leagueId = typeof request.query.leagueId === "string" ? request.query.leagueId : "";
+
+      if (!eventId || !leagueId) {
+        response.status(400).json({ error: "Missing eventId or leagueId" });
+        return;
+      }
+
+      const summary = await loadEventSummary(leagueId, eventId);
+
+      if (!summary) {
+        response.status(404).json({ error: "Event summary not found" });
+        return;
+      }
+
+      response.status(200).json(summary);
+      return;
+    }
+
     if (cachedPayload && Date.now() - cachedAt < CACHE_TTL_MS) {
       response.status(200).json(cachedPayload);
       return;
