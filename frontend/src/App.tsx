@@ -469,6 +469,7 @@ function App() {
       />
       {(selectedTeam || selectedEvent) && (
         <DetailDialog
+          key={selectedTeam?.id ?? selectedEvent?.id ?? "detail-dialog"}
           team={selectedTeam}
           event={selectedEvent}
           players={data.players}
@@ -512,14 +513,13 @@ function InstallAppPrompt() {
   const [isDismissed, setIsDismissed] = useState(
     () => localStorage.getItem("sports-vault:install-dismissed") === "true",
   );
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isStandalone] = useState(
+    () =>
+      window.matchMedia("(display-mode: standalone)").matches ||
+      ("standalone" in window.navigator && window.navigator.standalone === true),
+  );
 
   useEffect(() => {
-    setIsStandalone(
-      window.matchMedia("(display-mode: standalone)").matches ||
-        ("standalone" in window.navigator && window.navigator.standalone === true),
-    );
-
     function onBeforeInstallPrompt(event: Event) {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
@@ -1710,21 +1710,13 @@ function DetailDialog({ team, event, players, teams, getTeam, getLeague, onSelec
   const rivals = team ? teams.filter((item) => item.leagueId === team.leagueId && item.id !== team.id) : [];
   const [rivalId, setRivalId] = useState(rivals[0]?.id ?? "");
   const [eventSummary, setEventSummary] = useState<SportEventSummary | null>(null);
-  const [isLoadingEventSummary, setIsLoadingEventSummary] = useState(false);
+  const [isLoadingEventSummary, setIsLoadingEventSummary] = useState(Boolean(event));
   const [eventSummaryError, setEventSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!event) {
-      setEventSummary(null);
-      setEventSummaryError(null);
-      setIsLoadingEventSummary(false);
-      return;
-    }
+    if (!event) return;
 
     let isActive = true;
-
-    setIsLoadingEventSummary(true);
-    setEventSummaryError(null);
 
     sportsService
       .getEventSummary(event)
