@@ -42,11 +42,14 @@ import {
   writeVault,
 } from "./services/vaultStore";
 import type {
+  EventSummaryLeader,
+  EventSummaryStat,
   League,
   GameStatus,
   Player,
   SportCode,
   SportEvent,
+  SportEventSummary,
   Team,
   VaultState,
   View,
@@ -67,6 +70,38 @@ const navigation: { id: View; label: string; icon: typeof Home }[] = [
   { id: "games", label: "Jogos", icon: Trophy },
   { id: "search", label: "Buscar", icon: Search },
 ];
+
+const eventCardDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "short",
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "UTC",
+});
+
+const eventDetailDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "full",
+  timeStyle: "short",
+  timeZone: "UTC",
+});
+
+function formatEventCardDate(startsAt: string) {
+  return eventCardDateFormatter.format(new Date(startsAt));
+}
+
+function formatEventDetailDate(startsAt: string) {
+  return eventDetailDateFormatter.format(new Date(startsAt));
+}
+
+function formatEventDetailStatus(event: SportEvent) {
+  const score = `${event.homeScore ?? 0} - ${event.awayScore ?? 0}`;
+  const dateLabel = formatEventDetailDate(event.startsAt);
+
+  if (event.status === "finished") return `${score} · ${dateLabel}`;
+  if (event.status === "live") return `${score} · Ao vivo · ${dateLabel}`;
+  return dateLabel;
+}
 function App() {
   const [view, setView] = useState<View>("home");
   const [data, setData] = useState<SportsData | null>(null);
@@ -434,6 +469,7 @@ function App() {
       />
       {(selectedTeam || selectedEvent) && (
         <DetailDialog
+          key={selectedTeam?.id ?? selectedEvent?.id ?? "detail-dialog"}
           team={selectedTeam}
           event={selectedEvent}
           players={data.players}
@@ -477,14 +513,13 @@ function InstallAppPrompt() {
   const [isDismissed, setIsDismissed] = useState(
     () => localStorage.getItem("sports-vault:install-dismissed") === "true",
   );
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isStandalone] = useState(
+    () =>
+      window.matchMedia("(display-mode: standalone)").matches ||
+      ("standalone" in window.navigator && window.navigator.standalone === true),
+  );
 
   useEffect(() => {
-    setIsStandalone(
-      window.matchMedia("(display-mode: standalone)").matches ||
-        ("standalone" in window.navigator && window.navigator.standalone === true),
-    );
-
     function onBeforeInstallPrompt(event: Event) {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
@@ -1627,6 +1662,45 @@ function TeamCard({
     </article>
   );
 }
+function EventSummaryStats({
+  home,
+  away,
+  statistics,
+}: {
+  home: Team;
+  away: Team;
+  statistics: EventSummaryStat[];
+}) {
+  return (
+    <div className="event-summary-table">
+      <div className="event-summary-team-headings" aria-hidden="true">
+        <span>{home.shortName}</span>
+        <span>Estatística</span>
+        <span>{away.shortName}</span>
+      </div>
+      {statistics.map((stat) => (
+        <div key={stat.key} className="event-summary-row">
+          <b>{stat.homeValue}</b>
+          <span>{stat.label}</span>
+          <b>{stat.awayValue}</b>
+        </div>
+      ))}
+    </div>
+  );
+}
+function EventSummaryLeaders({ leaders }: { leaders: EventSummaryLeader[] }) {
+  return (
+    <div className="event-leader-grid">
+      {leaders.map((leader) => (
+        <article key={leader.key} className="event-leader-card">
+          <span>{leader.label}</span>
+          <b>{leader.homeValue}</b>
+          <small>{leader.awayValue}</small>
+        </article>
+      ))}
+    </div>
+  );
+}
 function DetailDialog({ team, event, players, teams, getTeam, getLeague, onSelectPlayer, onCompare, onClose }: { team: Team | null; event: SportEvent | null; players: Player[]; teams: Team[]; getTeam: (id: string) => Team; getLeague: (id: string) => League; onSelectPlayer: (player: Player) => void; onCompare: (teamAId: string, teamBId: string) => void; onClose: () => void }) {
   const selectedTeam = team ?? (event ? getTeam(event.homeTeamId) : null);
   const competition = selectedTeam ? getLeague(selectedTeam.leagueId) : event ? getLeague(event.leagueId) : null;
@@ -1635,7 +1709,113 @@ function DetailDialog({ team, event, players, teams, getTeam, getLeague, onSelec
   const roster = team ? players.filter((player) => player.teamId === team.id) : [];
   const rivals = team ? teams.filter((item) => item.leagueId === team.leagueId && item.id !== team.id) : [];
   const [rivalId, setRivalId] = useState(rivals[0]?.id ?? "");
-  return <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}><section className="detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detail-title" onMouseDown={(mouseEvent) => mouseEvent.stopPropagation()}><button className="dialog-close" onClick={onClose} aria-label="Fechar detalhes">×</button>{team && <><span className="crest detail-crest" style={{ backgroundColor: team.color }}>{team.shortName.slice(0, 2)}</span><p className="eyebrow">{competition?.name}</p><h2 id="detail-title">{team.name}</h2><p className="detail-copy">{team.city} · {competition?.country} · {competition?.season}</p>{roster.length > 0 && <ul className="roster-list">{roster.map((player) => (<li key={player.id}><button className="roster-item" onClick={() => onSelectPlayer(player)}>{player.name}<span>{player.position}</span></button></li>))}</ul>}{rivals.length > 0 && <div className="compare-box"><label>Comparar com<select value={rivalId} onChange={(changeEvent) => setRivalId(changeEvent.target.value)}>{rivals.map((rival) => (<option key={rival.id} value={rival.id}>{rival.name}</option>))}</select></label><button className="primary-button" onClick={() => rivalId && onCompare(team.id, rivalId)}>Ver Head-to-Head <ChevronRight size={16} /></button></div>}</>}{event && <><p className="eyebrow">{competition?.name}</p><h2 id="detail-title">{home?.name} <span>vs</span> {away?.name}</h2><p className="detail-copy">{event.status === "finished" ? `${event.homeScore} - ${event.awayScore} · Encerrado` : event.status === "live" ? `${event.homeScore ?? 0} - ${event.awayScore ?? 0} · Ao vivo` : new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "UTC" }).format(new Date(event.startsAt))}</p><p className="detail-venue"><CalendarDays size={16} />{event.venue}</p></>}</section></div>
+  const [eventSummary, setEventSummary] = useState<SportEventSummary | null>(null);
+  const [isLoadingEventSummary, setIsLoadingEventSummary] = useState(Boolean(event));
+  const [eventSummaryError, setEventSummaryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!event) return;
+
+    let isActive = true;
+
+    sportsService
+      .getEventSummary(event)
+      .then((summary) => {
+        if (!isActive) return;
+        setEventSummary(summary);
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setEventSummary(null);
+        setEventSummaryError("Não foi possível carregar as estatísticas da partida.");
+      })
+      .finally(() => {
+        if (isActive) setIsLoadingEventSummary(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [event]);
+
+  return (
+    <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
+      <section className="detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detail-title" onMouseDown={(mouseEvent) => mouseEvent.stopPropagation()}>
+        <button className="dialog-close" onClick={onClose} aria-label="Fechar detalhes">×</button>
+        {team && (
+          <>
+            <span className="crest detail-crest" style={{ backgroundColor: team.color }}>{team.shortName.slice(0, 2)}</span>
+            <p className="eyebrow">{competition?.name}</p>
+            <h2 id="detail-title">{team.name}</h2>
+            <p className="detail-copy">{team.city} · {competition?.country} · {competition?.season}</p>
+            {roster.length > 0 && (
+              <ul className="roster-list">
+                {roster.map((player) => (
+                  <li key={player.id}>
+                    <button className="roster-item" onClick={() => onSelectPlayer(player)}>
+                      {player.name}
+                      <span>{player.position}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {rivals.length > 0 && (
+              <div className="compare-box">
+                <label>
+                  Comparar com
+                  <select value={rivalId} onChange={(changeEvent) => setRivalId(changeEvent.target.value)}>
+                    {rivals.map((rival) => (
+                      <option key={rival.id} value={rival.id}>{rival.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <button className="primary-button" onClick={() => rivalId && onCompare(team.id, rivalId)}>
+                  Ver Head-to-Head <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+        {event && home && away && (
+          <>
+            <p className="eyebrow">{competition?.name}</p>
+            <h2 id="detail-title">{home.name} <span>vs</span> {away.name}</h2>
+            <p className="detail-copy">{formatEventDetailStatus(event)}</p>
+            <p className="detail-venue"><CalendarDays size={16} />{event.venue}</p>
+            <section className="event-summary-panel" aria-label="Resumo da partida">
+              <div className="event-summary-header">
+                <h3 className="player-section-title">Resumo da partida</h3>
+                {eventSummary?.shortStatus && <span>{eventSummary.shortStatus}</span>}
+              </div>
+              {eventSummary?.note && <p className="event-summary-note">{eventSummary.note}</p>}
+              {isLoadingEventSummary ? (
+                <p className="detail-copy">Carregando estatísticas...</p>
+              ) : eventSummaryError ? (
+                <p className="detail-copy" role="alert">{eventSummaryError}</p>
+              ) : eventSummary ? (
+                <>
+                  {eventSummary.statistics.length > 0 ? (
+                    <EventSummaryStats home={home} away={away} statistics={eventSummary.statistics} />
+                  ) : (
+                    <p className="detail-copy">Resumo estatístico indisponível para esta partida.</p>
+                  )}
+                  {eventSummary.leaders.length > 0 && (
+                    <>
+                      <h3 className="player-section-title">Destaques individuais</h3>
+                      <EventSummaryLeaders leaders={eventSummary.leaders} />
+                    </>
+                  )}
+                </>
+              ) : (
+                <p className="detail-copy">Resumo estatístico indisponível para esta partida.</p>
+              )}
+            </section>
+          </>
+        )}
+      </section>
+    </div>
+  );
 }
 function PlayerDialog({ player, team, getLeague, onClose }: { player: Player; team: Team; getLeague: (id: string) => League; onClose: () => void }) {
   const [seasonIndex, setSeasonIndex] = useState(0);
@@ -1840,14 +2020,7 @@ function EventCard({
   competition: League;
   onSelect?: (event: SportEvent) => void;
 }) {
-  const date = new Intl.DateTimeFormat("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  }).format(new Date(event.startsAt));
+  const date = formatEventCardDate(event.startsAt);
   return (
     <article className={onSelect ? "event-card selectable" : "event-card"} onClick={() => onSelect?.(event)} onKeyDown={(keyEvent) => { if (onSelect && (keyEvent.key === "Enter" || keyEvent.key === " ")) onSelect(event); }} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined}>
       <div className="event-meta">
@@ -1859,7 +2032,7 @@ function EventCard({
           </span>
         ) : (
           <span className={event.status === "finished" ? "status finished" : "status"}>
-            {event.status === "finished" ? "Encerrado" : date}
+            {event.status === "finished" ? `Encerrado · ${date}` : date}
           </span>
         )}
       </div>

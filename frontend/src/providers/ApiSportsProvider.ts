@@ -1,4 +1,4 @@
-import type { League, Player, SportEvent, Team } from "../types/sports";
+import type { League, Player, SportEvent, SportEventSummary, Team } from "../types/sports";
 import type { SportsProvider } from "./SportsProvider";
 
 interface SportsApiPayload {
@@ -28,6 +28,7 @@ async function loadSportsData(): Promise<Required<SportsApiPayload>> {
 }
 
 let sportsDataPromise: Promise<Required<SportsApiPayload>> | null = null;
+const summaryCache = new Map<string, Promise<SportEventSummary | null>>();
 
 function getSportsData() {
   sportsDataPromise ??= loadSportsData();
@@ -46,5 +47,31 @@ export const apiSportsProvider: SportsProvider = {
   },
   async getPlayers() {
     return (await getSportsData()).players;
+  },
+  async getEventSummary(event) {
+    const cacheKey = event.id;
+
+    if (!summaryCache.has(cacheKey)) {
+      summaryCache.set(
+        cacheKey,
+        fetch(
+          `${sportsApiBaseUrl}?type=summary&eventId=${encodeURIComponent(event.id)}&leagueId=${encodeURIComponent(event.leagueId)}`,
+        )
+          .then(async (response) => {
+            if (response.status === 404) return null;
+            if (!response.ok) {
+              throw new Error("Não foi possível carregar o resumo da partida.");
+            }
+
+            return (await response.json()) as SportEventSummary;
+          })
+          .catch((error) => {
+            summaryCache.delete(cacheKey);
+            throw error;
+          }),
+      );
+    }
+
+    return summaryCache.get(cacheKey)!;
   },
 };
