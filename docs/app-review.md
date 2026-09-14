@@ -39,17 +39,18 @@ O backend existente é `api/sports.js`. Não há diretório `backend/` ou aplica
 
 ## Logo e instalação
 
-O escudo lavanda/verde já existente em `frontend/public/maskable-icon.svg` foi preservado e adotado também no login, marca do feed, ícone padrão e favicon. O favicon anterior ainda era a marca do template Vite.
+A marca usa o “S” prateado e o aro turquesa de `frontend/public/sports-vault-logo-s.svg`, fonte vetorial dos ícones do login, feed, navegador e instalação. Os arquivos da marca anterior foram substituídos.
 
 | Arquivo em `frontend/public/` | Uso |
 | --- | --- |
 | `icon.svg` e `favicon.svg` | Marca vetorial e navegador |
+| `favicon-16.png` e `favicon-32.png` | Favicon PNG, 16 × 16 e 32 × 32 |
 | `icon-192.png` | Manifesto, 192 × 192 |
 | `icon-512.png` | Manifesto, 512 × 512 |
-| `maskable-icon-512.png` | Android, propósito `maskable`, fundo opaco |
+| `maskable-icon-192.png` e `maskable-icon-512.png` | Android, propósito `maskable`, fundo opaco |
 | `apple-touch-icon.png` | iPhone/iPad, 180 × 180 |
 
-Os PNGs são exportações da mesma fonte vetorial. O escudo e suas barras ficam dentro da área circular segura; os círculos externos são decoração recortável. O manifesto declara os PNGs, um identificador estável e mantém as cores do tema. O HTML referencia o PNG Apple e usa `viewport-fit=cover`. Os ícones são incluídos no build/precache; navegações `/api` foram excluídas do fallback HTML do service worker.
+Os PNGs são exportações da mesma fonte vetorial. As versões maskable aplicam escala de 90% sobre fundo opaco para manter o símbolo dentro da área circular segura. O ícone Apple também tem fundo opaco. O manifesto declara os PNGs, um identificador estável e mantém as cores do tema. O HTML referencia o PNG Apple e usa `viewport-fit=cover`. Os ícones são incluídos no build/precache; navegações `/api` foram excluídas do fallback HTML do service worker.
 
 Referências: [manifesto e ícones PWA](https://web.dev/learn/pwa/web-app-manifest), [área segura para ícones maskable](https://web.dev/articles/maskable-icon), [ícones de tela inicial Apple](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html).
 
