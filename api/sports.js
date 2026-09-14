@@ -89,6 +89,8 @@ function normalizeTeam(teamItem, leagueId) {
     leagueId,
     city: team.location || "N/D",
     color: team.color ? `#${team.color}` : "#2563eb",
+    logoUrl: team.logos?.find((logo) => logo.href?.startsWith("https://"))?.href
+      ?? (team.logo?.startsWith("https://") ? team.logo : undefined),
   };
 }
 

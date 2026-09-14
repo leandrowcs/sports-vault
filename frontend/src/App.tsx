@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import "./App.css";
 import { LoginScreen } from "./components/LoginScreen";
+import { TeamSearch } from "./components/TeamSearch";
+import { TeamCrest } from "./components/TeamCrest";
 import { useCloudAuth } from "./hooks/useCloudAuth";
 import { sportsService } from "./services/sportsService";
 import {
@@ -107,7 +109,6 @@ function App() {
   const [data, setData] = useState<SportsData | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [vault, setVault] = useState<VaultState>(readLocalVault);
-  const [query, setQuery] = useState("");
   const [gameSport, setGameSport] = useState<"all" | "football" | "basketball" | "american_football">("all");
   const [gameStatus, setGameStatus] = useState<"all" | "scheduled" | "live" | "finished">("all");
   const [teamPage, setTeamPage] = useState<Team | null>(null);
@@ -229,15 +230,9 @@ function App() {
   const favorites = data.teams.filter((item) =>
     vault.teamIds.includes(item.id),
   );
-  const normalizedQuery = query.trim().toLowerCase();
   const filteredGames = data.events.filter((event) => {
     const competition = league(event.leagueId);
     return (gameSport === "all" || competition.sport === gameSport) && (gameStatus === "all" || event.status === gameStatus);
-  });
-  const searchResults = data.teams.filter((item) => {
-    const competition = league(item.leagueId);
-    const searchable = `${item.name} ${item.shortName} ${item.city} ${competition.name} ${competition.country}`.toLowerCase();
-    return !normalizedQuery || searchable.includes(normalizedQuery);
   });
   const greeting = user?.displayName?.split(" ")[0] ?? "Leandro";
   const initials = (user?.displayName ?? "LD")
@@ -406,7 +401,6 @@ function App() {
         {view === "vault" && (
           <>
             <div className="page-intro">
-              <h2>Meu Vault</h2>
               <p>Times escolhidos para a sua biblioteca.</p>
             </div>
             {favorites.length ? (
@@ -438,36 +432,7 @@ function App() {
           </>
         )}
         {view === "search" && (
-          <>
-            <div className="page-intro">
-              <h2>Encontre para seguir</h2>
-              <p>Explore times e competições disponíveis.</p>
-            </div>
-            <label className="search-box">
-              <Search size={20} />
-              <input
-                autoFocus
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar time ou competição"
-              />
-            </label>
-            <SectionTitle
-              title={normalizedQuery ? "Resultados" : "Times em destaque"}
-            />
-            {searchResults.length ? <div className="team-grid">
-              {searchResults.map((item) => (
-                  <TeamCard
-                    key={item.id}
-                    team={item}
-                    league={league(item.leagueId)}
-                    saved={vault.teamIds.includes(item.id)}
-                    onToggle={toggleTeam}
-                    onSelect={setTeamPage}
-                  />
-                ))}
-            </div> : <div className="empty-state"><Search size={25} /><h3>Nada encontrado.</h3><p>Busque por um time, cidade ou competição.</p></div>}
-          </>
+          <TeamSearch teams={data.teams} leagues={data.leagues} savedTeamIds={vault.teamIds} onToggle={toggleTeam} onSelect={setTeamPage} />
         )}
       </main>
       <AppBottomNav
@@ -831,27 +796,6 @@ function OnboardingAthleteRow({ player, team, vaulted }: { player: Player; team?
         {vaulted ? <><Check size={15} /><span>Vaulted</span></> : <><Plus size={15} /><span>Adicionar</span></>}
       </button>
     </article>
-  );
-}
-function SectionTitle({
-  title,
-  action,
-  onAction,
-}: {
-  title: string;
-  action?: string;
-  onAction?: () => void;
-}) {
-  return (
-    <div className="section-title">
-      <h2>{title}</h2>
-      {action && (
-        <button onClick={onAction}>
-          {action}
-          <ChevronRight size={16} />
-        </button>
-      )}
-    </div>
   );
 }
 function VaultFeedHome({
@@ -1614,9 +1558,7 @@ function TeamCard({
   return (
     <article className="team-card">
       <div className="team-card-top">
-        <span className="crest" style={{ backgroundColor: team.color }}>
-          {team.shortName.slice(0, 2)}
-        </span>
+        <TeamCrest team={team} />
         <button
           className={saved ? "heart saved" : "heart"}
           onClick={() => onToggle(team.id)}

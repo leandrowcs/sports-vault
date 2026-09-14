@@ -2434,7 +2434,7 @@
   font-size: 10px;
   font-weight: 900;
 }
-@media (max-width: 800px) {
+@media screen {
   .onboarding-content {
     padding: 14px 16px 144px;
   }
@@ -2442,7 +2442,7 @@
     padding: 28px 16px 20px;
   }
 }
-@media (max-width: 800px) {
+@media screen {
   .sidebar {
     display: none;
   }
@@ -2815,6 +2815,35 @@
 }
 
 /* Shared controls and page geometry. */
+.app-shell, .login-screen, .onboarding-screen { width: var(--vault-mobile-shell-width); margin-inline: auto; }
+.team-search { display: grid; gap: 16px; }
+.search-description, .search-result-count { margin: 0; color: var(--vault-muted); font-size: 13px; }
+.team-search .search-box { margin: 0; gap: 10px; }
+.team-search .search-box > svg { flex-shrink: 0; }
+.team-search .search-box input { width: 100%; min-width: 0; }
+.search-clear { display: grid; place-items: center; flex: 0 0 44px; min-height: 44px; padding: 0; border: 0; border-radius: var(--vault-radius-control); background: transparent; color: var(--vault-muted); }
+.competition-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.competition-filters button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 10px; border: 1px solid var(--vault-border); border-radius: var(--vault-radius-control); background: var(--vault-surface); color: var(--vault-muted); font-size: 12px; text-align: left; overflow-wrap: anywhere; }
+.competition-filters button[aria-pressed="true"] { color: var(--vault-on-primary); background: var(--vault-primary); border-color: var(--vault-primary); font-weight: 800; }
+.competition-filters button span { font-size: 10px; opacity: .8; }
+.competition-groups { display: grid; gap: 12px; }
+.competition-group { min-width: 0; border: 1px solid var(--vault-border); border-radius: var(--vault-radius-card); background: var(--vault-surface); }
+.competition-group h2 { margin: 0; font-size: 14px; }
+.competition-heading { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px; border: 0; border-radius: var(--vault-radius-card); background: transparent; color: var(--vault-ink); text-align: left; }
+.competition-marker { flex: 0 0 4px; height: 32px; border-radius: 4px; }
+.competition-name { flex: 1; min-width: 0; }
+.competition-name strong, .search-team-detail strong { display: block; overflow-wrap: anywhere; }
+.competition-name small, .search-team-detail small { display: block; margin-top: 4px; color: var(--vault-muted); font-size: 11px; font-weight: 500; }
+.competition-heading > svg { flex-shrink: 0; }
+.competition-heading > svg.expanded { transform: rotate(180deg); }
+.competition-team-list { list-style: none; margin: 0; padding: 0 12px; }
+.search-team-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--vault-border); padding: 8px 0; }
+.search-team-detail { display: flex; align-items: center; flex: 1; min-width: 0; gap: 12px; padding: 8px 0; background: transparent; border: 0; color: var(--vault-ink); text-align: left; font-size: 13px; }
+.search-team-detail > span:last-child { min-width: 0; }
+.search-team-row .heart { flex-shrink: 0; }
+.search-team-row .crest { flex: 0 0 48px; width: 48px; height: 48px; font-size: 12px; }
+.team-crest-image { background: #f4f6fa; padding: 5px; }
+.team-crest-image img { width: 100%; height: 100%; object-fit: contain; }
 .brand-mark { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; overflow: hidden; border-radius: var(--vault-radius-control); }
 .brand-mark img { width: 100%; height: 100%; }
 .vault-logo { width: 32px; height: 32px; border-radius: var(--vault-radius-control); }
@@ -2844,7 +2873,7 @@
 .onboarding-bar { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 .onboarding-content { padding-bottom: calc(144px + env(safe-area-inset-bottom)); }
 
-@media (max-width: 800px) {
+@media screen {
   .app-shell { display: block; background: var(--vault-bg); }
   .content { width: var(--vault-mobile-shell-width); padding: calc(24px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom)); }
   .content:has(.vault-feed-home), .content:has(.team-vault-page), .content:has(.player-vault-page) { display: block; width: var(--vault-mobile-shell-width); padding: 0; }
