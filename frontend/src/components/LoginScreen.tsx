@@ -1,4 +1,4 @@
-import { LogIn, Trophy } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 interface LoginScreenProps {
   isConfigured: boolean;
@@ -12,7 +12,7 @@ export function LoginScreen({ isConfigured, isLoading, error, onSignIn }: LoginS
     <div className="login-screen">
       <div className="login-card">
         <span className="brand-mark">
-          <Trophy size={22} />
+          <img src="/icon.svg" alt="" width="40" height="40" />
         </span>
         <h1>Sports Vault</h1>
         <p>Entre com sua conta Google para acessar seu painel esportivo.</p>

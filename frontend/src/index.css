@@ -1,2 +1,46 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
-:root { font-family: 'Manrope', sans-serif; color: var(--vault-ink); background: var(--vault-bg); font-synthesis: none; text-rendering: optimizeLegibility; } * { box-sizing: border-box; } html, body, #root { width: 100%; max-width: 100%; } body { margin: 0; min-width: 320px; } img, video, canvas { display: block; max-width: 100%; height: auto; } button, input, select, textarea { font: inherit; max-width: 100%; } button { cursor: pointer; } button:focus-visible, input:focus-visible { outline: 3px solid var(--vault-focus); outline-offset: 2px; }
+:root {
+  font-family: 'Manrope', sans-serif;
+  color: var(--vault-ink);
+  background: var(--vault-bg);
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --vault-primary: #c5d0ff;
+  --vault-primary-dark: #c5d0ff;
+  --vault-primary-light: rgba(197, 208, 255, .12);
+  --vault-on-primary: #00174c;
+  --vault-bg: #0f131c;
+  --vault-surface: #1c2028;
+  --vault-surface-raised: #262a33;
+  --vault-ink: #e6ecfb;
+  --vault-muted: #a2aec5;
+  --vault-border: #353c4b;
+  --vault-focus: #c5d0ff;
+  --vault-navy: #181e2c;
+  --vault-success: #7bfd8b;
+  --vault-danger: #ffb4ab;
+  --vault-radius-control: 8px;
+  --vault-radius-card: 12px;
+  --vault-control-size: 44px;
+  --vault-mobile-shell-width: min(448px, 100vw);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; max-width: 100%; }
+body { margin: 0; min-width: 320px; }
+img, video, canvas { display: block; max-width: 100%; height: auto; }
+button, input, select, textarea { font: inherit; max-width: 100%; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .6; }
+:focus-visible { outline: 3px solid var(--vault-focus); outline-offset: 3px; }
+input, select, textarea { font-size: 16px; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

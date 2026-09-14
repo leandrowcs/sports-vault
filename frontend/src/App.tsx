@@ -164,6 +164,12 @@ function App() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+  function navigateTo(nextView: View) {
+    setTeamPage(null);
+    setPlayerPage(null);
+    setView(nextView);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
   function toggleTeam(teamId: string) {
     setVault((current) => {
       const teamIds = current.teamIds.includes(teamId)
@@ -197,12 +203,17 @@ function App() {
   }
   if (dataError) {
     return (
-      <main className="loading" role="alert">
-        {dataError}
+      <main className="loading">
+        <section className="login-card">
+          <img src="/icon.svg" alt="" width="64" height="64" />
+          <h1>Sports Vault</h1>
+          <p role="alert">{dataError}</p>
+          <button className="primary-button" onClick={() => window.location.reload()}>Tentar novamente</button>
+        </section>
       </main>
     );
   }
-  if (!data) return <main className="loading">Carregando seu Vault...</main>;
+  if (!data) return <main className="loading" role="status">Carregando seu Vault...</main>;
   if (!vault.onboarded) {
     return (
       <OnboardingScreen
@@ -238,9 +249,9 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <button className="brand" onClick={() => setView("home")}>
+        <button className="brand" onClick={() => navigateTo("home")}>
           <span className="brand-mark">
-            <Trophy size={20} />
+            <img src="/icon.svg" alt="" width="40" height="40" />
           </span>
           <span>
             Sports
@@ -253,7 +264,7 @@ function App() {
             <button
               key={id}
               className={view === id ? "nav-item active" : "nav-item"}
-              onClick={() => setView(id)}
+              onClick={() => navigateTo(id)}
             >
               <Icon size={19} />
               {label}
@@ -263,9 +274,9 @@ function App() {
         <div className="sidebar-note">
           <Compass size={18} />
           <span>
-            Dados de demonstração
+            {import.meta.env.VITE_USE_MOCK_SPORTS === "true" ? "Dados de demonstração" : "Dados esportivos ESPN"}
             <br />
-            Provider mock ativo
+            Seu painel esportivo
           </span>
         </div>
       </aside>
@@ -299,7 +310,7 @@ function App() {
               Entrar
             </button>
           ) : (
-            <span className="demo-account">Modo demo</span>
+            <span className="demo-account">Modo local</span>
           )}
         </header>}
         {(authError || vaultError) && (
@@ -462,10 +473,10 @@ function App() {
       <AppBottomNav
         active={view === "games" ? "games" : view === "search" ? "explore" : view === "vault" ? "favorites" : "vault"}
         className="mobile-nav"
-        onOpenGames={() => setView("games")}
-        onOpenVault={() => setView("home")}
-        onOpenSearch={() => setView("search")}
-        onOpenFavorites={() => setView("vault")}
+        onOpenGames={() => navigateTo("games")}
+        onOpenVault={() => navigateTo("home")}
+        onOpenSearch={() => navigateTo("search")}
+        onOpenFavorites={() => navigateTo("vault")}
       />
       {(selectedTeam || selectedEvent) && (
         <DetailDialog
@@ -561,7 +572,7 @@ function InstallAppPrompt() {
     </aside>
   );
 }
-type BottomNavItem = "vault" | "games" | "explore" | "favorites" | "profile";
+type BottomNavItem = "vault" | "games" | "explore" | "favorites";
 function AppBottomNav({
   active,
   className = "",
@@ -569,7 +580,6 @@ function AppBottomNav({
   onOpenGames,
   onOpenSearch,
   onOpenVault,
-  onOpenProfile,
 }: {
   active: BottomNavItem;
   className?: string;
@@ -577,20 +587,18 @@ function AppBottomNav({
   onOpenGames: () => void;
   onOpenSearch: () => void;
   onOpenVault: () => void;
-  onOpenProfile?: () => void;
 }) {
   const items: { id: BottomNavItem; label: string; icon: typeof Shield; onClick: () => void }[] = [
-    { id: "vault", label: "Vault", icon: Shield, onClick: onOpenVault },
+    { id: "vault", label: "Início", icon: Home, onClick: onOpenVault },
     { id: "games", label: "Jogos", icon: Trophy, onClick: onOpenGames },
-    { id: "explore", label: "Explorar", icon: Search, onClick: onOpenSearch },
-    { id: "favorites", label: "Favoritos", icon: Star, onClick: onOpenFavorites },
-    { id: "profile", label: "Perfil", icon: CircleUserRound, onClick: onOpenProfile ?? onOpenVault },
+    { id: "explore", label: "Buscar", icon: Search, onClick: onOpenSearch },
+    { id: "favorites", label: "Meu Vault", icon: Heart, onClick: onOpenFavorites },
   ];
 
   return (
     <nav className={`app-bottom-nav ${className}`.trim()} aria-label="Navegação principal">
       {items.map(({ id, label, icon: Icon, onClick }) => (
-        <button key={id} className={active === id ? "active" : ""} onClick={onClick}>
+        <button key={id} className={active === id ? "active" : ""} aria-current={active === id ? "page" : undefined} onClick={onClick}>
           <Icon size={20} fill={active === id && (id === "vault" || id === "favorites") ? "currentColor" : "none"} />
           <span>{label}</span>
         </button>
@@ -853,8 +861,6 @@ function VaultFeedHome({
   getTeam,
   getLeague,
   onOpenGames,
-  onOpenFavorites,
-  onOpenVault,
   onOpenSearch,
   onSelectEvent,
 }: {
@@ -895,7 +901,7 @@ function VaultFeedHome({
           <button className="icon-button" aria-label="Menu principal">
             <Menu size={20} />
           </button>
-          <Shield size={20} className="vault-shield" fill="currentColor" />
+          <img className="vault-logo" src="/icon.svg" alt="" width="32" height="32" />
           <b>SPORTS VAULT</b>
         </div>
         <div className="vault-mobile-actions">
@@ -936,7 +942,7 @@ function VaultFeedHome({
           <h2>Jogos Ao Vivo & Destaque</h2>
         </div>
         <div className="carousel-actions">
-          <span>{Math.max(liveEvents.length, 1)} ativos</span>
+          <span>{liveEvents.length} ativos</span>
           <button type="button" onClick={() => scrollFeaturedMatches("left")} aria-label="Ver jogos anteriores">
             <ChevronLeft size={16} />
           </button>
@@ -967,6 +973,7 @@ function VaultFeedHome({
         </div>
       )}
 
+      <p className="preview-note">Prévia: os alertas, classificações rápidas e artigos abaixo são demonstrativos.</p>
       <section className="vault-alert-card">
         <div className="vault-feed-section-heading inline-heading">
           <div>
@@ -1039,13 +1046,6 @@ function VaultFeedHome({
         </div>
       </section>
 
-      <AppBottomNav
-        active="vault"
-        onOpenFavorites={onOpenFavorites}
-        onOpenGames={onOpenGames}
-        onOpenSearch={onOpenSearch}
-        onOpenVault={onOpenVault}
-      />
     </section>
   );
 }
@@ -1070,10 +1070,14 @@ function FeaturedMatchCard({
     minute: "2-digit",
     timeZone: "UTC",
   }).format(new Date(event.startsAt));
-  const possession = Math.min(68, Math.max(38, 50 + (home.shortName.length - away.shortName.length) * 4));
 
   return (
-    <article className="featured-match-card" onClick={() => onSelect(event)}>
+    <article className="featured-match-card" role="button" tabIndex={0} onClick={() => onSelect(event)} onKeyDown={(keyEvent) => {
+      if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+        keyEvent.preventDefault();
+        onSelect(event);
+      }
+    }}>
       <div className="match-accent" style={{ backgroundColor: league.color }} />
       <header>
         <span>
@@ -1089,17 +1093,7 @@ function FeaturedMatchCard({
         <TeamScoreRow team={away} score={event.awayScore} status={event.status} />
       </div>
       {event.status === "live" ? (
-        <div className="match-meter-box">
-          <div className="meter-labels">
-            <span>{possession}%</span>
-            <span>Posse de bola</span>
-            <span>{100 - possession}%</span>
-          </div>
-          <div className="split-meter">
-            <span style={{ width: `${possession}%`, backgroundColor: home.color }} />
-            <span style={{ width: `${100 - possession}%`, backgroundColor: away.color }} />
-          </div>
-        </div>
+        <p className="detail-copy">Abra a partida para consultar as estatísticas disponíveis.</p>
       ) : (
         <div className="player-highlight">
           <span>{player?.name.slice(0, 2).toUpperCase() ?? home.shortName.slice(0, 2)}</span>
@@ -1168,9 +1162,6 @@ function PlayerVaultPage({
   team,
   league,
   onBack,
-  onOpenGames,
-  onOpenVault,
-  onOpenSearch,
 }: {
   player: Player;
   team: Team;
@@ -1211,6 +1202,7 @@ function PlayerVaultPage({
 
   return (
     <section className="player-vault-page" aria-label={`${player.name} Player Analytics`}>
+      <p className="preview-note">Prévia: velocidade, comparações, adversários e destaques incluem dados ilustrativos. Integração completa pendente.</p>
       <header className="player-vault-topbar">
         <div>
           <button onClick={onBack} aria-label="Voltar">
@@ -1359,14 +1351,6 @@ function PlayerVaultPage({
         )}
       </section>
 
-      <AppBottomNav
-        active="profile"
-        className="player-vault-bottom"
-        onOpenFavorites={onOpenVault}
-        onOpenGames={onOpenGames}
-        onOpenSearch={onOpenSearch}
-        onOpenVault={onOpenVault}
-      />
     </section>
   );
 }
@@ -1402,9 +1386,6 @@ function TeamVaultPage({
   saved,
   onBack,
   onToggleFavorite,
-  onOpenGames,
-  onOpenVault,
-  onOpenSearch,
   onSelectPlayer,
 }: {
   team: Team;
@@ -1440,6 +1421,7 @@ function TeamVaultPage({
 
   return (
     <section className="team-vault-page" aria-label={`${team.name} Team Vault`}>
+      <p className="preview-note">Prévia: classificação, forma, eficiência e escalação incluem dados ilustrativos. Integração completa pendente.</p>
       <header className="team-vault-topbar">
         <button onClick={onBack} aria-label="Voltar">
           <ArrowLeft size={21} />
@@ -1556,14 +1538,6 @@ function TeamVaultPage({
         </div>
       </section>
 
-      <AppBottomNav
-        active="vault"
-        className="team-vault-bottom"
-        onOpenFavorites={onToggleFavorite}
-        onOpenGames={onOpenGames}
-        onOpenSearch={onOpenSearch}
-        onOpenVault={onOpenVault}
-      />
     </section>
   );
 }
@@ -2022,7 +1996,7 @@ function EventCard({
 }) {
   const date = formatEventCardDate(event.startsAt);
   return (
-    <article className={onSelect ? "event-card selectable" : "event-card"} onClick={() => onSelect?.(event)} onKeyDown={(keyEvent) => { if (onSelect && (keyEvent.key === "Enter" || keyEvent.key === " ")) onSelect(event); }} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined}>
+    <article className={onSelect ? "event-card selectable" : "event-card"} onClick={() => onSelect?.(event)} onKeyDown={(keyEvent) => { if (onSelect && (keyEvent.key === "Enter" || keyEvent.key === " ")) { keyEvent.preventDefault(); onSelect(event); } }} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined}>
       <div className="event-meta">
         <span>{competition.name}</span>
         {event.status === "live" ? (
