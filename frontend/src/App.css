@@ -2817,6 +2817,12 @@
 /* Shared controls and page geometry. */
 .app-shell, .login-screen, .onboarding-screen { width: var(--vault-mobile-shell-width); margin-inline: auto; }
 .team-search { display: grid; gap: 16px; }
+.search-filter-label { margin: 0 0 8px; color: var(--vault-muted); font-size: 12px; font-weight: 800; }
+.search-competition-section { min-width: 0; }
+.competition-filters.search-competition-strip { flex-wrap: nowrap; overflow-x: auto; padding: 4px 3px 8px; }
+.search-competition-strip button { flex-shrink: 0; }
+.search-team-competitions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.search-team-competitions > span { padding: 3px 6px; border-radius: 4px; background: var(--vault-surface-raised); color: var(--vault-muted); font-size: 10px; overflow-wrap: anywhere; }
 .search-description, .search-result-count { margin: 0; color: var(--vault-muted); font-size: 13px; }
 .team-search .search-box { margin: 0; gap: 10px; }
 .team-search .search-box > svg { flex-shrink: 0; }

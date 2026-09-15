@@ -35,6 +35,7 @@ import {
 import "./App.css";
 import { LoginScreen } from "./components/LoginScreen";
 import { TeamSearch } from "./components/TeamSearch";
+import { groupTeams, toggleTeamGroup } from "./helpers/teamGroups";
 import { TeamCrest } from "./components/TeamCrest";
 import { useCloudAuth } from "./hooks/useCloudAuth";
 import { sportsService } from "./services/sportsService";
@@ -172,10 +173,9 @@ function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
   function toggleTeam(teamId: string) {
+    const variants = data ? groupTeams(data.teams, data.leagues).find((group) => group.variants.some((team) => team.id === teamId))?.variants.map((team) => team.id) : undefined;
     setVault((current) => {
-      const teamIds = current.teamIds.includes(teamId)
-        ? current.teamIds.filter((id) => id !== teamId)
-        : [...current.teamIds, teamId];
+      const teamIds = toggleTeamGroup(current.teamIds, variants ?? [teamId]);
       const next = { ...current, teamIds };
       void writeVault(user?.uid, next).catch(() =>
         setVaultError("Favoritos salvos apenas neste dispositivo."),
@@ -405,7 +405,7 @@ function App() {
             </div>
             {favorites.length ? (
               <div className="team-grid">
-                {favorites.map((item) => (
+                {groupTeams(favorites, data.leagues).map(({ team: item }) => (
                   <TeamCard
                     key={item.id}
                     team={item}

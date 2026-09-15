@@ -84,6 +84,7 @@ function normalizeTeam(teamItem, leagueId) {
 
   return {
     id: `${leagueId}-${team.id}`,
+    espnTeamId: String(team.id),
     name: team.displayName,
     shortName: team.abbreviation || team.displayName.slice(0, 3).toUpperCase(),
     leagueId,
