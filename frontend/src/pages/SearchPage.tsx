@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronDown, Heart, Search, X } from "lucide-react";
 import type { League, SportCode, Team } from "../types/sports";
 import { groupTeams } from "../helpers/teamGroups";
-import { TeamCrest } from "./TeamCrest";
+import { TeamCrest } from "../components/TeamCrest";
 
 interface TeamSearchProps {
   teams: Team[];

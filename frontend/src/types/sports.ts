@@ -14,7 +14,8 @@ export interface SportEventSummary {
   statistics: EventSummaryStat[]
   leaders: EventSummaryLeader[]
 }
-export interface PlayerSeasonStats {
+export interface FootballPlayerSeasonStats {
+  sport?: 'football'
   season: string
   competitionId: string
   appearances: number
@@ -38,3 +39,31 @@ export interface Player {
   seasons: PlayerSeasonStats[]
 }
 export interface VaultState { teamIds: string[]; onboarded: boolean }
+
+export interface BasketballPlayerSeasonStats {
+  sport: 'basketball'
+  season: string
+  competitionId: string
+  appearances: number
+  points?: number
+  rebounds?: number
+  assists?: number
+  steals?: number
+  blocks?: number
+  threePointersMade?: number
+  turnovers?: number
+}
+export interface AmericanFootballPlayerSeasonStats {
+  sport: 'american_football'
+  season: string
+  competitionId: string
+  appearances: number
+  passingYards?: number
+  passingTouchdowns?: number
+  rushingYards?: number
+  receivingYards?: number
+  touchdowns?: number
+  tackles?: number
+  sacks?: number
+}
+export type PlayerSeasonStats = FootballPlayerSeasonStats | BasketballPlayerSeasonStats | AmericanFootballPlayerSeasonStats;

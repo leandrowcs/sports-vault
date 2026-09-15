@@ -2817,6 +2817,11 @@
 /* Shared controls and page geometry. */
 .app-shell, .login-screen, .onboarding-screen { width: var(--vault-mobile-shell-width); margin-inline: auto; }
 .team-search { display: grid; gap: 16px; }
+.statistics-scope { color: var(--vault-muted); font-size: 12px; line-height: 1.6; margin: 0 0 16px; }
+.team-module .player-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.team-module .player-metric-card { min-width: 0; }
+.team-module .player-metric-card header { min-height: 36px; }
+.team-hero-content > .crest { margin-inline: auto; }
 .search-filter-label { margin: 0 0 8px; color: var(--vault-muted); font-size: 12px; font-weight: 800; }
 .search-competition-section { min-width: 0; }
 .competition-filters.search-competition-strip { flex-wrap: nowrap; overflow-x: auto; padding: 4px 3px 8px; }

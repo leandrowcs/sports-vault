@@ -177,6 +177,7 @@ async function loadFootballPlayers(def, teams) {
     seasons: [
       {
         season,
+        sport: "football",
         competitionId: def.id,
         appearances: player.appearances,
         goals: player.goals,

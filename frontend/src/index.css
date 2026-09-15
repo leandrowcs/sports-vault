@@ -23,7 +23,8 @@
   --vault-radius-control: 8px;
   --vault-radius-card: 12px;
   --vault-control-size: 44px;
-  --vault-mobile-shell-width: min(448px, 100vw);
+  --vault-mobile-shell-width: min(95vw, 100vw);
+  --vault-bottom-nav-shell-width: min(100vw, 100vw);
 }
 
 * { box-sizing: border-box; }
