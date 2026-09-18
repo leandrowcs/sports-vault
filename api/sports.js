@@ -16,22 +16,19 @@ function getLeagueSeason(def, date = new Date()) {
 }
 
 // ESPN's public scoreboard/teams endpoints require no API key and serve the current season.
+// Scope trimmed to the user's focus: NBA, NFL, Brasileirão A-D + Copa do Brasil, and Seleção Brasileira.
 const leagueDefs = [
-  { id: "brasileirao-a", name: "Brasileirão Série A", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.1", getSeason: getAnnualSeason, color: "#16a34a" },
-  { id: "brasileirao-b", name: "Brasileirão Série B", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.2", getSeason: getAnnualSeason, color: "#22c55e" },
-  { id: "copa-do-brasil", name: "Copa do Brasil", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.copa_do_brazil", getSeason: getAnnualSeason, color: "#facc15", supportsPlayers: false },
-  { id: "libertadores", name: "CONMEBOL Libertadores", country: "América do Sul", sport: "football", espnSport: "soccer", espnLeague: "conmebol.libertadores", getSeason: getAnnualSeason, color: "#0f766e", supportsPlayers: false },
-  { id: "sudamericana", name: "CONMEBOL Sudamericana", country: "América do Sul", sport: "football", espnSport: "soccer", espnLeague: "conmebol.sudamericana", getSeason: getAnnualSeason, color: "#65a30d", supportsPlayers: false },
-  { id: "copa-america", name: "Copa América", country: "CONMEBOL", sport: "football", espnSport: "soccer", espnLeague: "conmebol.america", getSeason: getAnnualSeason, color: "#06b6d4", supportsPlayers: false },
-  { id: "copa-do-mundo", name: "FIFA World Cup", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.world", getSeason: getAnnualSeason, color: "#2563eb", supportsPlayers: false },
-  { id: "amistosos-internacionais", name: "International Friendly", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.friendly", getSeason: getAnnualSeason, color: "#38bdf8", supportsPlayers: false },
-  { id: "eliminatorias-copa", name: "World Cup Qualifying", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.worldq", getSeason: getAnnualSeason, color: "#0284c7", supportsPlayers: false },
-  { id: "eliminatorias-conmebol", name: "Eliminatórias CONMEBOL", country: "América do Sul", sport: "football", espnSport: "soccer", espnLeague: "fifa.worldq.conmebol", getSeason: getAnnualSeason, color: "#0891b2", supportsPlayers: false },
-  { id: "premier-league", name: "Premier League", country: "Inglaterra", sport: "football", espnSport: "soccer", espnLeague: "eng.1", getSeason: getSplitSeason, color: "#5b21b6" },
-  { id: "la-liga", name: "LaLiga", country: "Espanha", sport: "football", espnSport: "soccer", espnLeague: "esp.1", getSeason: getSplitSeason, color: "#ef4444" },
-  { id: "champions-league", name: "UEFA Champions League", country: "Europa", sport: "football", espnSport: "soccer", espnLeague: "uefa.champions", getSeason: getSplitSeason, color: "#1d4ed8" },
-  { id: "nba", name: "NBA", country: "Estados Unidos", sport: "basketball", espnSport: "basketball", espnLeague: "nba", getSeason: getSplitSeason, color: "#ea580c" },
-  { id: "nfl", name: "NFL", country: "Estados Unidos", sport: "american_football", espnSport: "football", espnLeague: "nfl", getSeason: getSplitSeason, color: "#7c2d12" },
+  { id: "brasileirao-a", name: "Brasileirão Série A", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.1", getSeason: getAnnualSeason, color: "#16a34a", focusGroup: "futebol" },
+  { id: "brasileirao-b", name: "Brasileirão Série B", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.2", getSeason: getAnnualSeason, color: "#22c55e", focusGroup: "futebol" },
+  { id: "brasileirao-c", name: "Brasileirão Série C", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.3", getSeason: getAnnualSeason, color: "#4ade80", focusGroup: "futebol" },
+  { id: "brasileirao-d", name: "Brasileirão Série D", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.4", getSeason: getAnnualSeason, color: "#86efac", focusGroup: "futebol" },
+  { id: "copa-do-brasil", name: "Copa do Brasil", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.copa_do_brazil", getSeason: getAnnualSeason, color: "#facc15", supportsPlayers: false, focusGroup: "futebol" },
+  { id: "copa-america", name: "Copa América", country: "CONMEBOL", sport: "football", espnSport: "soccer", espnLeague: "conmebol.america", getSeason: getAnnualSeason, color: "#06b6d4", supportsPlayers: false, focusGroup: "selecao" },
+  { id: "copa-do-mundo", name: "FIFA World Cup", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.world", getSeason: getAnnualSeason, color: "#2563eb", supportsPlayers: false, focusGroup: "selecao" },
+  { id: "amistosos-internacionais", name: "International Friendly", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.friendly", getSeason: getAnnualSeason, color: "#38bdf8", supportsPlayers: false, focusGroup: "selecao" },
+  { id: "eliminatorias-conmebol", name: "Eliminatórias CONMEBOL", country: "América do Sul", sport: "football", espnSport: "soccer", espnLeague: "fifa.worldq.conmebol", getSeason: getAnnualSeason, color: "#0891b2", supportsPlayers: false, focusGroup: "selecao" },
+  { id: "nba", name: "NBA", country: "Estados Unidos", sport: "basketball", espnSport: "basketball", espnLeague: "nba", getSeason: getSplitSeason, color: "#ea580c", focusGroup: "nba" },
+  { id: "nfl", name: "NFL", country: "Estados Unidos", sport: "american_football", espnSport: "football", espnLeague: "nfl", getSeason: getSplitSeason, color: "#7c2d12", focusGroup: "nfl" },
 ];
 
 const nationalTeamIds = [
@@ -460,6 +457,7 @@ async function loadSportsData() {
     sport: def.sport,
     season: getLeagueSeason(def),
     color: def.color,
+    focusGroup: def.focusGroup,
   }));
 
   const teamsById = new Map();
@@ -477,7 +475,7 @@ async function loadSportsData() {
 
   events.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
 
-  return { leagues, nationalTeams: nationalTeamIds, teams: [...teamsById.values()], events: events.slice(0, 80), players };
+  return { leagues, nationalTeams: nationalTeamIds, teams: [...teamsById.values()], events: events.slice(0, 160), players };
 }
 
 module.exports = async function handler(request, response) {

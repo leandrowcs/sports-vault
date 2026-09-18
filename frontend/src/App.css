@@ -514,6 +514,15 @@
   font-size: 23px;
   margin-bottom: 7px;
 }
+.page-intro-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.page-intro-row h2 {
+  margin-bottom: 0;
+}
 .game-list {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1522,6 +1531,10 @@
   margin: 10px 0 0;
   color: var(--vault-muted);
   font-size: 12px;
+}
+.standings-table {
+  display: flex;
+  flex-direction: column;
 }
 .analysis-list {
   display: grid;

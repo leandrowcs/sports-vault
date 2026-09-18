@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Compass, Heart, Home, LogIn, LogOut, Search, Trophy } from "lucide-react";
+import { Compass, Heart, Home, LogIn, LogOut, Trophy } from "lucide-react";
 import "./App.css";
 import { LoginScreen } from "./components/LoginScreen";
 import { TeamSearch } from "./pages/SearchPage";
@@ -16,7 +16,7 @@ import { DetailDialog } from "./components/DetailDialog";
 import { PlayerDialog } from "./components/PlayerDialog";
 import { HeadToHeadDialog } from "./components/HeadToHeadDialog";
 import { VaultPage } from "./pages/VaultPage";
-import { GamesPage } from "./pages/GamesPage";
+import { CompetitionsPage } from "./pages/CompetitionsPage";
 import { AppBottomNav } from "./components/AppBottomNav";
 import { InstallAppPrompt } from "./components/InstallAppPrompt";
 interface SportsData {
@@ -27,12 +27,12 @@ interface SportsData {
 }
 const navigation: { id: View; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Início", icon: Home },
-  { id: "vault", label: "Meu Vault", icon: Heart },
-  { id: "games", label: "Jogos", icon: Trophy },
-  { id: "search", label: "Buscar", icon: Search },
+  { id: "competitions", label: "Competições", icon: Trophy },
+  { id: "favorites", label: "Favoritos", icon: Heart },
 ];
 function App() {
   const [view, setView] = useState<View>("home");
+  const [showSearch, setShowSearch] = useState(false);
   const [data, setData] = useState<SportsData | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [vault, setVault] = useState<VaultState>(readLocalVault);
@@ -93,6 +93,7 @@ function App() {
   function navigateTo(nextView: View) {
     setTeamPage(null);
     setPlayerPage(null);
+    setShowSearch(false);
     setView(nextView);
     window.scrollTo({ top: 0, behavior: "instant" });
   }
@@ -202,9 +203,11 @@ function App() {
           <div>
             <p className="eyebrow">SEU PAINEL ESPORTIVO</p>
             <h1>
-              {view === "home"
+              {view === "home" && !showSearch
                 ? `Olá, ${greeting}.`
-                : navigation.find((item) => item.id === view)?.label}
+                : showSearch
+                  ? "Buscar times"
+                  : navigation.find((item) => item.id === view)?.label}
             </h1>
           </div>
           {user ? (
@@ -241,21 +244,6 @@ function App() {
             team={team(playerPage.teamId)}
             league={league(team(playerPage.teamId).leagueId)}
             onBack={() => setPlayerPage(null)}
-            onOpenGames={() => {
-              setPlayerPage(null);
-              setTeamPage(null);
-              setView("games");
-            }}
-            onOpenVault={() => {
-              setPlayerPage(null);
-              setTeamPage(null);
-              setView("vault");
-            }}
-            onOpenSearch={() => {
-              setPlayerPage(null);
-              setTeamPage(null);
-              setView("search");
-            }}
           />
         ) : teamPage ? (
           <TeamVaultPage
@@ -268,45 +256,36 @@ function App() {
             saved={vault.teamIds.includes(teamPage.id)}
             onBack={() => setTeamPage(null)}
             onToggleFavorite={() => toggleTeam(teamPage.id)}
-            onOpenGames={() => {
-              setTeamPage(null);
-              setView("games");
-            }}
-            onOpenVault={() => {
-              setTeamPage(null);
-              setView("vault");
-            }}
-            onOpenSearch={() => {
-              setTeamPage(null);
-              setView("search");
-            }}
             onSelectPlayer={setPlayerPage}
           />
-        ) : view === "home" && (
+        ) : view === "home" ? (
           <VaultFeedHome
             events={data.events}
             favorites={favorites}
             players={data.players}
+            leagues={data.leagues}
             getTeam={team}
             getLeague={league}
-            onOpenGames={() => setView("games")}
-            onOpenFavorites={() => setView("vault")}
-            onOpenSearch={() => setView("search")}
+            onOpenGames={() => setView("competitions")}
+            onOpenFavorites={() => navigateTo("favorites")}
             onOpenVault={() => setView("home")}
+            onOpenSearch={() => setShowSearch(true)}
             onSelectEvent={setSelectedEvent}
           />
+        ) : view === "competitions" ? (
+          <CompetitionsPage events={data.events} leagues={data.leagues} teams={data.teams} getTeam={team} getLeague={league} onSelectEvent={setSelectedEvent} />
+        ) : showSearch ? (
+          <TeamSearch teams={data.teams} leagues={data.leagues} savedTeamIds={vault.teamIds} onToggle={toggleTeam} onSelect={(selected) => { setShowSearch(false); setTeamPage(selected); }} />
+        ) : (
+          <VaultPage favorites={favorites} leagues={data.leagues} onToggle={toggleTeam} onSelect={setTeamPage} onSearch={() => setShowSearch(true)} />
         )}
-        {!teamPage && !playerPage && view === "games" && <GamesPage events={data.events} getTeam={team} getLeague={league} onSelect={setSelectedEvent} />}
-        {!teamPage && !playerPage && view === "vault" && <VaultPage favorites={favorites} leagues={data.leagues} onToggle={toggleTeam} onSelect={setTeamPage} onSearch={() => setView("search")} />}
-        {!teamPage && !playerPage && view === "search" && <TeamSearch teams={data.teams} leagues={data.leagues} savedTeamIds={vault.teamIds} onToggle={toggleTeam} onSelect={setTeamPage} />}
       </main>
       <AppBottomNav
-        active={view === "games" ? "games" : view === "search" ? "explore" : view === "vault" ? "favorites" : "vault"}
+        active={view}
         className="mobile-nav"
-        onOpenGames={() => navigateTo("games")}
-        onOpenVault={() => navigateTo("home")}
-        onOpenSearch={() => navigateTo("search")}
-        onOpenFavorites={() => navigateTo("vault")}
+        onOpenHome={() => navigateTo("home")}
+        onOpenCompetitions={() => navigateTo("competitions")}
+        onOpenFavorites={() => navigateTo("favorites")}
       />
       {(selectedTeam || selectedEvent) && (
         <DetailDialog
