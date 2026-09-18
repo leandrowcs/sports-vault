@@ -187,7 +187,7 @@ async function loadFootballPlayers(def, teams) {
   }));
 }
 
-function normalizeEvent(event, leagueId) {
+function normalizeEvent(event, leagueId, scoreboard) {
   const competition = event.competitions?.[0];
   const competitors = competition?.competitors;
   if (!competition || !competitors || competitors.length < 2) return null;
@@ -206,6 +206,8 @@ function normalizeEvent(event, leagueId) {
     startsAt: event.date,
     status,
     venue: competition.venue?.fullName || "A definir",
+    week: event.week?.number ?? scoreboard?.week?.number,
+    seasonPhase: event.season?.type === 1 ? "Pré-temporada" : event.season?.type === 3 ? "Playoffs" : undefined,
     ...(status !== "scheduled" ? { homeScore: Number(home.score ?? 0), awayScore: Number(away.score ?? 0) } : {}),
   };
 }
@@ -446,7 +448,7 @@ async function loadLeagueData(def) {
   const teams = [...teamsById.values()];
 
   const events = rawEvents
-    .map((event) => normalizeEvent(event, def.id))
+    .map((event) => normalizeEvent(event, def.id, scoreboardPayload))
     .filter((event) => event && teamsById.has(event.homeTeamId) && teamsById.has(event.awayTeamId));
 
   const players = def.espnSport === "soccer" && def.supportsPlayers !== false

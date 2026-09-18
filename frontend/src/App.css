@@ -2982,3 +2982,39 @@
   .vault-feed-home > .competition-filters button { font-size: 11px; gap: 5px; }
   .vault-feed-home > .competition-filters .sport-icon { width: 18px; height: 18px; }
 }
+
+/* Home header and competition schedules. */
+.header-brand { padding: 0; flex-shrink: 0; gap: 10px; }
+.header-brand img { display: block; border-radius: 10px; }
+.header-brand > span { display: flex; flex-direction: column; gap: 2px; font-size: 17px; font-weight: 500; }
+.header-brand strong { font-size: 23px; color: var(--vault-primary-dark); }
+.view-heading { margin: 0 0 24px; font-size: clamp(22px, 4vw, 28px); }
+.schedule-groups, .schedule-content { display: grid; gap: 16px; min-width: 0; }
+.schedule-group { min-width: 0; border: 1px solid var(--vault-border); border-radius: var(--vault-radius-card); overflow: hidden; background: var(--vault-surface); }
+.schedule-toggle { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px; border: 0; background: var(--vault-surface-raised); color: var(--vault-ink); text-align: left; font: inherit; font-weight: 700; }
+.schedule-toggle > span:first-child { flex: 1; min-width: 0; }
+.schedule-toggle > svg { flex-shrink: 0; transition: transform .15s; }
+.schedule-toggle[aria-expanded="false"] > svg { transform: rotate(-90deg); }
+.schedule-toggle:focus-visible { outline: 2px solid var(--vault-primary); outline-offset: -3px; }
+.schedule-count { font-size: 12px; font-weight: 400; color: var(--vault-muted); white-space: nowrap; }
+.schedule-content { padding: 16px; }
+.schedule-day > h3 { margin: 0 0 12px; font-size: 14px; }
+.schedule-day > h3 small { color: var(--vault-muted); font-size: 10px; font-weight: 400; }
+.home-game { min-width: 0; }
+.home-game .event-card { height: auto; }
+.home-event-stats { padding: 12px; border: 1px solid var(--vault-border); border-radius: var(--vault-radius-control); margin-top: 8px; }
+.home-event-stats h4 { margin: 0 0 12px; font-size: 13px; }
+.home-event-stats .event-leader-grid { grid-template-columns: 1fr; }
+.home-event-stats .event-leader-card { padding: 10px; }
+.round-statistics h3 { margin: 0 0 12px; font-size: 14px; }
+.round-statistics dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.round-statistics dl > div { background: var(--vault-surface-raised); padding: 12px; border-radius: var(--vault-radius-control); }
+.round-statistics dt { font-size: 12px; color: var(--vault-muted); }
+.round-statistics dd { font-size: 24px; font-weight: 700; margin: 8px 0 0; }
+@media (max-width: 600px) {
+  .schedule-content { padding: 10px; }
+  .schedule-toggle { padding: 12px; gap: 8px; font-size: 13px; }
+  .schedule-day .game-list { grid-template-columns: 1fr; }
+  .round-statistics dl { gap: 6px; }
+  .round-statistics dl > div { padding: 8px; }
+}

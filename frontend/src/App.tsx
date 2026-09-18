@@ -204,16 +204,10 @@ function App() {
       </aside>
       <main className="content">
         {!teamPage && !playerPage && <header className="topbar">
-          <div>
-            <h1 className="page-heading" data-sport={view}>
-              {view !== "home" && !showSearch && <NavigationIcon view={view} size={28} />}
-              {view === "home" && !showSearch
-                ? `Olá, ${greeting}.`
-                : showSearch
-                  ? "Buscar times"
-                  : navigation.find((item) => item.id === view)?.label}
-            </h1>
-          </div>
+          <button className="brand header-brand" aria-label="Sports Vault — início" onClick={() => navigateTo("home")}>
+            <img src="/icon.svg" alt="" width="42" height="42" />
+            <span>Sports<strong>Vault</strong></span>
+          </button>
           {user ? (
             <button
               className="profile"
@@ -237,6 +231,10 @@ function App() {
             <span className="demo-account">Modo local</span>
           )}
         </header>}
+        {!teamPage && !playerPage && <h1 className="page-heading view-heading" data-sport={view}>
+          {view !== "home" && !showSearch && <NavigationIcon view={view} size={28} />}
+          {showSearch ? "Buscar times" : view === "home" ? `Olá, ${greeting}.` : navigation.find((item) => item.id === view)?.label}
+        </h1>}
         {(authError || vaultError) && (
           <p className="sync-error" role="alert">
             {authError ?? vaultError}
@@ -265,15 +263,9 @@ function App() {
         ) : view === "home" ? (
           <VaultFeedHome
             events={data.events}
-            favorites={favorites}
-            players={data.players}
             leagues={data.leagues}
             getTeam={team}
             getLeague={league}
-            onOpenGames={() => setView("futebol")}
-            onOpenFavorites={() => navigateTo("favorites")}
-            onOpenVault={() => setView("home")}
-            onOpenSearch={() => setShowSearch(true)}
             onSelectEvent={setSelectedEvent}
           />
         ) : view === "favorites" ? (

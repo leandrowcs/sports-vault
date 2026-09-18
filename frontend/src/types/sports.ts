@@ -4,7 +4,7 @@ export type FocusGroupId = 'futebol' | 'selecao' | 'nba' | 'nfl'
 export type View = 'home' | FocusGroupId | 'favorites'
 export interface League { id: string; name: string; country: string; sport: SportCode; season: string; color: string; focusGroup?: FocusGroupId }
 export interface Team { id: string; name: string; shortName: string; leagueId: string; city: string; color: string; logoUrl?: string; espnTeamId?: string }
-export interface SportEvent { id: string; leagueId: string; homeTeamId: string; awayTeamId: string; startsAt: string; status: GameStatus; venue: string; homeScore?: number; awayScore?: number }
+export interface SportEvent { id: string; leagueId: string; homeTeamId: string; awayTeamId: string; startsAt: string; status: GameStatus; venue: string; homeScore?: number; awayScore?: number; week?: number; seasonPhase?: string }
 export interface EventSummaryStat { key: string; label: string; homeValue: string; awayValue: string }
 export interface EventSummaryLeader { key: string; label: string; homeValue: string; awayValue: string }
 export interface SportEventSummary {
