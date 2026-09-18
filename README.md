@@ -15,6 +15,8 @@ Biblioteca pessoal para acompanhar times, competições, jogos e resultados.
 
 O aplicativo usa a API pública da ESPN por uma rota serverless Vercel em `/api/sports`, sem necessidade de chave. O frontend continua desacoplado por `SportsProvider`; componentes de UI não chamam APIs externas diretamente.
 
+Se a rota falhar, exceder o tempo de resposta ou retornar um catálogo vazio, o provider consulta a ESPN diretamente pelo navegador. A normalização em `shared/espn.mjs` é compartilhada pelos dois caminhos. Nesse modo, os times disponíveis são os participantes dos placares carregados, pois o endpoint de catálogo da ESPN não permite CORS. Resumos de partidas também possuem fallback. Se nenhuma fonte fornecer dados, a interface apresenta erro e permite tentar novamente; a API não armazena falhas como respostas vazias de sucesso.
+
 ## Executar
 
 ```bash

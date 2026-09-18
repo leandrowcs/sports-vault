@@ -11,27 +11,35 @@ interface SportsApiPayload {
 const sportsApiBaseUrl = import.meta.env.VITE_SPORTS_API_BASE_URL || "/api/sports";
 
 async function loadSportsData(): Promise<Required<SportsApiPayload>> {
-  const response = await fetch(sportsApiBaseUrl);
+  try {
+    const response = await fetch(sportsApiBaseUrl, { signal: AbortSignal.timeout(20000) });
 
-  if (!response.ok) {
-    throw new Error("Não foi possível carregar os dados esportivos.");
+    if (!response.ok) {
+      throw new Error("Não foi possível carregar os dados esportivos.");
+    }
+
+    const payload = (await response.json()) as SportsApiPayload | null;
+    if (!payload || !Array.isArray(payload.leagues) || !payload.leagues.length
+      || !Array.isArray(payload.teams) || !payload.teams.length
+      || !Array.isArray(payload.events) || !Array.isArray(payload.players)) {
+      throw new Error("A API esportiva retornou dados indisponíveis.");
+    }
+
+    return { leagues: payload.leagues, teams: payload.teams, events: payload.events, players: payload.players };
+  } catch {
+    const espn = await import("../../../shared/espn.mjs");
+    return espn.loadSportsData();
   }
-
-  const payload = (await response.json()) as SportsApiPayload;
-
-  return {
-    leagues: Array.isArray(payload.leagues) ? payload.leagues : [],
-    teams: Array.isArray(payload.teams) ? payload.teams : [],
-    events: Array.isArray(payload.events) ? payload.events : [],
-    players: Array.isArray(payload.players) ? payload.players : [],
-  };
 }
 
 let sportsDataPromise: Promise<Required<SportsApiPayload>> | null = null;
 const summaryCache = new Map<string, Promise<SportEventSummary | null>>();
 
 function getSportsData() {
-  sportsDataPromise ??= loadSportsData();
+  sportsDataPromise ??= loadSportsData().catch((error: unknown) => {
+    sportsDataPromise = null;
+    throw error;
+  });
   return sportsDataPromise;
 }
 
@@ -56,6 +64,7 @@ export const apiSportsProvider: SportsProvider = {
         cacheKey,
         fetch(
           `${sportsApiBaseUrl}?type=summary&eventId=${encodeURIComponent(event.id)}&leagueId=${encodeURIComponent(event.leagueId)}`,
+          { signal: AbortSignal.timeout(20000) },
         )
           .then(async (response) => {
             if (response.status === 404) return null;
@@ -65,7 +74,11 @@ export const apiSportsProvider: SportsProvider = {
 
             return (await response.json()) as SportEventSummary;
           })
-          .catch((error) => {
+          .catch(async () => {
+            const espn = await import("../../../shared/espn.mjs");
+            return espn.loadEventSummary(event.leagueId, event.id);
+          })
+          .catch((error: unknown) => {
             summaryCache.delete(cacheKey);
             throw error;
           }),

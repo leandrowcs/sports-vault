@@ -26,7 +26,12 @@ export function VaultFeedHome({
   onSelectEvent: (event: SportEvent) => void;
 }) {
   const availableGroups = FOCUS_GROUPS.filter((group) => leagues.some((league) => getFocusGroup(league) === group.id));
-  const [activeGroup, setActiveGroup] = useState<FocusGroupId>(availableGroups[0]?.id ?? "futebol");
+  const [activeGroup, setActiveGroup] = useState<FocusGroupId>(() =>
+    availableGroups.find((group) => events.some((event) =>
+      getFocusGroup(getLeague(event.leagueId)) === group.id
+      && (group.id !== "selecao" || isBrazilEvent(event, getTeam)),
+    ))?.id ?? availableGroups[0]?.id ?? "futebol",
+  );
   const liveEvents = events.filter((event) => event.status === "live");
 
   const groupEvents = events
