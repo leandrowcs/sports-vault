@@ -55,21 +55,19 @@ const nationalTeamIds = [
 let cachedPayload;
 let cachedAt = 0;
 
-function formatDate(date) {
-  return date.toISOString().slice(0, 10).replace(/-/g, "");
-}
-
-function addDays(date, days) {
-  const next = new Date(date);
-  next.setUTCDate(next.getUTCDate() + days);
-  return next;
-}
-
 async function espnFetch(path) {
-  const response = await fetch(`${ESPN_BASE_URL}${path}`);
+  const response = await fetch(`${ESPN_BASE_URL}${path}`, {
+    // ESPN's CDN blocks requests without a browser-like User-Agent from cloud/datacenter IPs (e.g. Vercel).
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+      Accept: "application/json",
+      Referer: "https://www.espn.com/",
+    },
+    signal: AbortSignal.timeout(8000),
+  });
 
   if (!response.ok) {
-    throw new Error(`ESPN request failed: ${response.status}`);
+    throw new Error(`ESPN request failed: ${response.status} ${path}`);
   }
 
   return response.json();
@@ -424,13 +422,11 @@ async function loadEventSummary(leagueId, eventId) {
 }
 
 async function loadLeagueData(def) {
-  const today = new Date();
-  const from = formatDate(addDays(today, -3));
-  const to = formatDate(addDays(today, 10));
-
+  // ESPN's scoreboard endpoint rejects the "dates=FROM-TO" range format (400); the
+  // no-param default already returns the current round/week window we need.
   const [teamsPayload, scoreboardPayload] = await Promise.all([
     espnFetch(`/${def.espnSport}/${def.espnLeague}/teams`),
-    espnFetch(`/${def.espnSport}/${def.espnLeague}/scoreboard?dates=${from}-${to}`),
+    espnFetch(`/${def.espnSport}/${def.espnLeague}/scoreboard`),
   ]);
 
   const teamGroups = teamsPayload.sports?.[0]?.leagues?.[0]?.teams ?? [];
@@ -449,6 +445,12 @@ async function loadLeagueData(def) {
 
 async function loadSportsData() {
   const results = await Promise.allSettled(leagueDefs.map((def) => loadLeagueData(def)));
+
+  results.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`sports-vault: failed to load ${leagueDefs[index].id}`, result.reason);
+    }
+  });
 
   const leagues = leagueDefs.map((def) => ({
     id: def.id,
