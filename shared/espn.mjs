@@ -23,8 +23,8 @@ const leagueDefs = [
   { id: "brasileirao-d", name: "Brasileirão Série D", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.4", getSeason: getAnnualSeason, color: "#86efac", focusGroup: "futebol" },
   { id: "copa-do-brasil", name: "Copa do Brasil", country: "Brasil", sport: "football", espnSport: "soccer", espnLeague: "bra.copa_do_brazil", getSeason: getAnnualSeason, color: "#facc15", supportsPlayers: false, focusGroup: "futebol" },
   { id: "copa-america", name: "Copa América", country: "CONMEBOL", sport: "football", espnSport: "soccer", espnLeague: "conmebol.america", getSeason: getAnnualSeason, color: "#06b6d4", supportsPlayers: false, focusGroup: "selecao" },
-  { id: "copa-do-mundo", name: "FIFA World Cup", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.world", getSeason: getAnnualSeason, color: "#2563eb", supportsPlayers: false, focusGroup: "selecao" },
-  { id: "amistosos-internacionais", name: "International Friendly", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.friendly", getSeason: getAnnualSeason, color: "#38bdf8", supportsPlayers: false, focusGroup: "selecao" },
+  { id: "copa-do-mundo", name: "Copa do Mundo", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.world", getSeason: getAnnualSeason, color: "#2563eb", supportsPlayers: false, focusGroup: "selecao" },
+  { id: "amistosos-internacionais", name: "Amistosos internacionais", country: "Internacional", sport: "football", espnSport: "soccer", espnLeague: "fifa.friendly", getSeason: getAnnualSeason, color: "#38bdf8", supportsPlayers: false, focusGroup: "selecao" },
   { id: "eliminatorias-conmebol", name: "Eliminatórias CONMEBOL", country: "América do Sul", sport: "football", espnSport: "soccer", espnLeague: "fifa.worldq.conmebol", getSeason: getAnnualSeason, color: "#0891b2", supportsPlayers: false, focusGroup: "selecao" },
   { id: "nba", name: "NBA", country: "Estados Unidos", sport: "basketball", espnSport: "basketball", espnLeague: "nba", getSeason: getSplitSeason, color: "#ea580c", focusGroup: "nba" },
   { id: "nfl", name: "NFL", country: "Estados Unidos", sport: "american_football", espnSport: "football", espnLeague: "nfl", getSeason: getSplitSeason, color: "#7c2d12", focusGroup: "nfl" },
@@ -418,15 +418,41 @@ export async function loadEventSummary(leagueId, eventId) {
   };
 }
 
+async function loadScoreboard(def) {
+  const path = `/${def.espnSport}/${def.espnLeague}/scoreboard`;
+  if (def.focusGroup !== "selecao") return espnFetch(path);
+
+  // A national team's next fixture may be months away. The default scoreboard
+  // only covers one matchday; team schedules also omit upcoming friendlies.
+  const year = new Date().getUTCFullYear();
+  const results = await Promise.allSettled([year, year + 1].map((season) =>
+    espnFetch(`${path}?dates=${season}&limit=1000`),
+  ));
+  if (results.every((result) => result.status === "rejected")) {
+    throw new AggregateError(results.map((result) => result.reason), `Brazil schedule unavailable: ${def.id}`);
+  }
+  const events = new Map();
+  results.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(`sports-vault: failed to load ${def.id} season ${year + index}`, result.reason);
+      return;
+    }
+    for (const event of result.value.events ?? []) {
+      const eventYear = new Date(event.date).getUTCFullYear();
+      const includesBrazil = event.competitions?.[0]?.competitors?.some((competitor) => String(competitor.team?.id) === "205");
+      if (includesBrazil && eventYear >= year && eventYear <= year + 1) events.set(event.id, event);
+    }
+  });
+  return { events: [...events.values()] };
+}
+
 async function loadLeagueData(def) {
-  // ESPN's scoreboard endpoint rejects the "dates=FROM-TO" range format (400); the
-  // no-param default already returns the current round/week window we need.
   const [teamsResult, scoreboardResult] = await Promise.allSettled([
     // The catalog does not expose CORS; browser fallback derives teams from scoreboards.
     typeof window === "undefined"
       ? espnFetch(`/${def.espnSport}/${def.espnLeague}/teams`)
       : Promise.resolve(null),
-    espnFetch(`/${def.espnSport}/${def.espnLeague}/scoreboard`),
+    loadScoreboard(def),
   ]);
 
   if (teamsResult.status === "rejected" && scoreboardResult.status === "rejected") {
@@ -496,5 +522,5 @@ export async function loadSportsData() {
     throw new Error("Não foi possível obter dados da ESPN. Tente novamente em instantes.");
   }
 
-  return { leagues, nationalTeams: nationalTeamIds, teams: [...teamsById.values()], events: events.slice(0, 160), players };
+  return { leagues, nationalTeams: nationalTeamIds, teams: [...teamsById.values()], events, players };
 }
