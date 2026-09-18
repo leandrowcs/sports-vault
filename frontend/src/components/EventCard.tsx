@@ -1,4 +1,6 @@
-import { CalendarDays } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { SportIcon } from "./SportIcon";
+import { getFocusGroup } from "../helpers/focusGroups";
 import type { League, SportEvent, Team } from "../types/sports";
 import { formatEventCardDate } from "../helpers/eventDates";
 export function EventCard({
@@ -18,7 +20,7 @@ export function EventCard({
   return (
     <article className={onSelect ? "event-card selectable" : "event-card"} onClick={() => onSelect?.(event)} onKeyDown={(keyEvent) => { if (onSelect && (keyEvent.key === "Enter" || keyEvent.key === " ")) { keyEvent.preventDefault(); onSelect(event); } }} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined}>
       <div className="event-meta">
-        <span>{competition.name}</span>
+        <span className="event-competition" data-sport={getFocusGroup(competition)}><SportIcon sport={getFocusGroup(competition)} size={16} />{competition.name}</span>
         {event.status === "live" ? (
           <span className="status live">
             <span className="live-dot" />
@@ -49,10 +51,10 @@ export function EventCard({
           <b>{away.name}</b>
         </div>
       </div>
-      <p className="venue">
-        <CalendarDays size={14} />
+      {event.venue && event.venue !== "A definir" && <p className="venue">
+        <MapPin size={14} aria-hidden="true" />
         {event.venue}
-      </p>
+      </p>}
     </article>
   );
 }

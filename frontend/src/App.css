@@ -2918,3 +2918,67 @@
   .content:has(.vault-feed-home) > .sync-error, .content:has(.team-vault-page) > .sync-error, .content:has(.player-vault-page) > .sync-error { position: relative; z-index: 21; margin: calc(64px + env(safe-area-inset-top)) 16px 0; padding: 12px; background: var(--vault-surface); }
   .featured-match-card { width: min(308px, calc(100vw - 32px)); flex-basis: min(308px, calc(100vw - 32px)); }
 }
+
+/* Consistent sport identities across navigation, filters and cards. */
+.sport-icon { flex: 0 0 auto; }
+.brazil-ball-panel { fill: #65a3ff; stroke: currentColor; }
+.page-heading { display: flex; align-items: center; gap: 12px; }
+.page-heading > svg { color: var(--sport-accent); }
+.competition-filters button { gap: 8px; transition: background-color .15s, border-color .15s; }
+.competition-filters button[data-sport],
+.competitions-page .competition-filters button {
+  color: var(--sport-accent);
+  background: var(--sport-soft);
+  border-color: color-mix(in srgb, var(--sport-accent) 28%, var(--vault-border));
+}
+.competition-filters button:hover,
+.competition-filters button:focus-visible { border-color: var(--sport-accent); }
+.competition-filters button[aria-pressed="true"] {
+  background: var(--sport-selected);
+  color: var(--sport-on-selected);
+  border-color: var(--sport-edge);
+  box-shadow: inset 0 -2px 0 var(--sport-edge);
+}
+.competition-filters button > span { padding: 2px 6px; border-radius: 5px; background: #00000018; opacity: 1; }
+.nav-item[data-sport] > svg,
+.app-bottom-nav button[data-sport] > svg { color: var(--sport-accent); }
+.nav-item[data-sport]:hover,
+.nav-item[data-sport].active,
+.app-bottom-nav button[data-sport].active {
+  color: var(--sport-accent);
+  background: var(--sport-soft);
+  box-shadow: inset 0 -3px 0 var(--sport-edge);
+}
+.app-bottom-nav button { min-height: 44px; border-radius: 10px 10px 0 0; }
+.sport-choice-card[data-sport] { border-color: color-mix(in srgb, var(--sport-accent) 30%, var(--vault-border)); }
+.sport-choice-card[data-sport] div span { color: var(--sport-accent); background: var(--sport-soft); }
+.sport-choice-card[data-sport].active { border-color: var(--sport-edge); background: var(--sport-soft); }
+.sport-choice-card[data-sport].active div > svg { color: var(--sport-accent); }
+.event-meta .event-competition { display: inline-flex; align-items: center; gap: 6px; color: var(--sport-accent); white-space: normal; }
+.event-meta { align-items: flex-start; flex-wrap: wrap; row-gap: 6px; }
+.event-meta .status.finished { color: var(--vault-muted); }
+.competitions-page { display: grid; gap: 24px; }
+.competitions-page > .competition-filters { margin-bottom: 0; }
+.content:has(.vault-feed-home) {
+  padding: calc(24px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom));
+}
+.content:has(.vault-feed-home) > .topbar { display: flex; }
+.content:has(.vault-feed-home) > .sync-error { margin: 0 0 18px; }
+.vault-feed-home { min-height: auto; padding: 0; }
+.vault-feed-home > .competition-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.vault-feed-home > .competition-filters button { justify-content: center; flex-direction: column; min-height: 72px; padding: 10px 6px; }
+.vault-feed-home .quick-standings { padding: 0; }
+.vault-feed-home .mini-standing { border: 1px solid var(--vault-border); border-radius: var(--vault-radius-card); background: var(--vault-surface); }
+.vault-feed-home .mini-standing article { padding: 14px 16px; }
+.vault-feed-home .mini-standing article + article { border-top: 1px solid var(--vault-border); }
+.vault-feed-home .mini-standing h3 { margin: 0; font-size: 14px; }
+.vault-feed-home .mini-standing p { margin: 5px 0 0; font-size: 12px; }
+.vault-feed-home > .inline-heading { margin-bottom: -8px; }
+@media (max-width: 380px) {
+  .vault-feed-home > .competition-filters { gap: 5px; }
+  .vault-feed-home > .competition-filters button { font-size: 11px; gap: 5px; }
+  .vault-feed-home > .competition-filters .sport-icon { width: 18px; height: 18px; }
+}

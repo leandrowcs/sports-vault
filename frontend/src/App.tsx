@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { CircleDot, Compass, Flag, Goal, Heart, Home, LogIn, LogOut, Shield } from "lucide-react";
+import { Compass, LogIn, LogOut } from "lucide-react";
+import { NavigationIcon } from "./components/SportIcon";
+import { FOCUS_GROUPS } from "./helpers/focusGroups";
 import "./App.css";
 import { LoginScreen } from "./components/LoginScreen";
 import { TeamSearch } from "./pages/SearchPage";
@@ -25,13 +27,10 @@ interface SportsData {
   events: SportEvent[];
   players: Player[];
 }
-const navigation: { id: View; label: string; icon: typeof Home }[] = [
-  { id: "home", label: "Início", icon: Home },
-  { id: "nba", label: "NBA", icon: CircleDot },
-  { id: "nfl", label: "NFL", icon: Shield },
-  { id: "futebol", label: "Futebol", icon: Goal },
-  { id: "selecao", label: "Brasil", icon: Flag },
-  { id: "favorites", label: "Favoritos", icon: Heart },
+const navigation: { id: View; label: string }[] = [
+  { id: "home", label: "Início" },
+  ...FOCUS_GROUPS,
+  { id: "favorites", label: "Favoritos" },
 ];
 function App() {
   const [view, setView] = useState<View>("home");
@@ -181,13 +180,15 @@ function App() {
           </span>
         </button>
         <nav aria-label="Navegação principal">
-          {navigation.map(({ id, label, icon: Icon }) => (
+          {navigation.map(({ id, label }) => (
             <button
               key={id}
+              data-sport={id}
+              aria-current={view === id ? "page" : undefined}
               className={view === id ? "nav-item active" : "nav-item"}
               onClick={() => navigateTo(id)}
             >
-              <Icon size={19} />
+              <NavigationIcon view={id} />
               {label}
             </button>
           ))}
@@ -204,8 +205,8 @@ function App() {
       <main className="content">
         {!teamPage && !playerPage && <header className="topbar">
           <div>
-            <p className="eyebrow">SEU PAINEL ESPORTIVO</p>
-            <h1>
+            <h1 className="page-heading" data-sport={view}>
+              {view !== "home" && !showSearch && <NavigationIcon view={view} size={28} />}
               {view === "home" && !showSearch
                 ? `Olá, ${greeting}.`
                 : showSearch

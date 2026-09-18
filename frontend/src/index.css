@@ -25,6 +25,40 @@
   --vault-control-size: 44px;
   --vault-mobile-shell-width: min(95vw, 100vw);
   --vault-bottom-nav-shell-width: min(100vw, 100vw);
+  --sport-accent: var(--vault-primary);
+  --sport-soft: var(--vault-primary-light);
+  --sport-selected: var(--vault-primary);
+  --sport-on-selected: var(--vault-on-primary);
+  --sport-edge: var(--vault-primary);
+}
+
+[data-sport="nba"] {
+  --sport-accent: #ffb36b;
+  --sport-soft: #ff922b18;
+  --sport-selected: #ffb36b;
+  --sport-on-selected: #361900;
+  --sport-edge: #ff922b;
+}
+[data-sport="nfl"] {
+  --sport-accent: #ff9299;
+  --sport-soft: #f45b6918;
+  --sport-selected: #ff9299;
+  --sport-on-selected: #400b16;
+  --sport-edge: #f45b69;
+}
+[data-sport="futebol"] {
+  --sport-accent: #7cdda1;
+  --sport-soft: #36c97718;
+  --sport-selected: #7cdda1;
+  --sport-on-selected: #082d1a;
+  --sport-edge: #36c977;
+}
+[data-sport="selecao"] {
+  --sport-accent: #ffe075;
+  --sport-soft: #295caa30;
+  --sport-selected: #244e94;
+  --sport-on-selected: #ffe075;
+  --sport-edge: #ffe075;
 }
 
 * { box-sizing: border-box; }

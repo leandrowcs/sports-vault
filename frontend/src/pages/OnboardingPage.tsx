@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ArrowRight, Check, Plus, Search, SlidersHorizontal, Trophy } from "lucide-react";
+import { ArrowRight, Check, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { SportIcon } from "../components/SportIcon";
+import { getSportGroup } from "../helpers/focusGroups";
 import type { League, Player, SportCode, Team } from "../types/sports";
 const onboardingSports: { id: SportCode; label: string }[] = [
   { id: "football", label: "Futebol" },
@@ -93,6 +95,7 @@ export function OnboardingScreen({
             {onboardingSports.map((option) => (
               <SportChoiceCard
                 key={option.id}
+                sport={option.id}
                 active={selectedSports.has(option.id)}
                 label={option.label}
                 description={sportDescriptions[option.id]}
@@ -179,11 +182,11 @@ export function OnboardingScreen({
     </div>
   );
 }
-function SportChoiceCard({ active, label, description, onClick }: { active: boolean; label: string; description: string; onClick: () => void }) {
+function SportChoiceCard({ sport, active, label, description, onClick }: { sport: SportCode; active: boolean; label: string; description: string; onClick: () => void }) {
   return (
-    <button type="button" className={active ? "sport-choice-card active" : "sport-choice-card"} onClick={onClick}>
+    <button type="button" data-sport={getSportGroup(sport)} aria-pressed={active} className={active ? "sport-choice-card active" : "sport-choice-card"} onClick={onClick}>
       <div>
-        <span><Trophy size={18} /></span>
+        <span><SportIcon sport={getSportGroup(sport)} size={24} /></span>
         {active && <Check size={18} />}
       </div>
       <b>{label}</b>

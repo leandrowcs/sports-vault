@@ -1,4 +1,4 @@
-import type { FocusGroupId, League, SportEvent, Team } from '../types/sports'
+import type { FocusGroupId, League, SportCode, SportEvent, Team } from '../types/sports'
 
 export const FOCUS_GROUPS: { id: FocusGroupId; label: string }[] = [
   { id: 'nba', label: 'NBA' },
@@ -11,7 +11,11 @@ export const FOCUS_GROUPS: { id: FocusGroupId; label: string }[] = [
 const BRAZIL_ESPN_TEAM_ID = '205'
 
 export function getFocusGroup(league: League): FocusGroupId {
-  return league.focusGroup ?? (league.sport === 'basketball' ? 'nba' : league.sport === 'american_football' ? 'nfl' : 'futebol')
+  return league.focusGroup ?? getSportGroup(league.sport)
+}
+
+export function getSportGroup(sport: SportCode): FocusGroupId {
+  return sport === 'basketball' ? 'nba' : sport === 'american_football' ? 'nfl' : 'futebol'
 }
 
 export function isBrazilTeam(team: Pick<Team, 'espnTeamId' | 'id'>): boolean {

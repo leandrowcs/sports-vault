@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Bell, CircleUserRound, Heart, Menu, Trophy } from "lucide-react";
+import { Heart, Trophy } from "lucide-react";
 import { FOCUS_GROUPS, getFocusGroup, isBrazilEvent } from "../helpers/focusGroups";
+import { SportIcon } from "../components/SportIcon";
+import { groupTeams } from "../helpers/teamGroups";
 import { EventCard } from "../components/EventCard";
 import type { FocusGroupId, League, Player, SportEvent, Team } from "../types/sports";
 
@@ -32,7 +34,7 @@ export function VaultFeedHome({
       && (group.id !== "selecao" || isBrazilEvent(event, getTeam)),
     ))?.id ?? availableGroups[0]?.id ?? "futebol",
   );
-  const liveEvents = events.filter((event) => event.status === "live");
+  const favoriteGroups = groupTeams(favorites, leagues);
 
   const groupEvents = events
     .filter((event) => getFocusGroup(getLeague(event.leagueId)) === activeGroup)
@@ -45,35 +47,13 @@ export function VaultFeedHome({
 
   return (
     <section className="vault-feed-home" aria-label="Resumo da rodada">
-      <div className="vault-mobile-topbar">
-        <div className="vault-mobile-brand">
-          <button className="icon-button" aria-label="Menu principal">
-            <Menu size={20} />
-          </button>
-          <img className="vault-logo" src="/icon.svg" alt="" width="32" height="32" />
-          <b>SPORTS VAULT</b>
-        </div>
-        <div className="vault-mobile-actions">
-          <button className="icon-button notification-button" aria-label="Notificações">
-            <Bell size={20} />
-            {liveEvents.length > 0 && <span />}
-          </button>
-          <CircleUserRound size={28} />
-        </div>
-      </div>
-
       <nav className="competition-filters" aria-label="Filtrar por competição">
-        {availableGroups.map((group) => {
-          const count = events.filter((event) => getFocusGroup(getLeague(event.leagueId)) === group.id
-            && (group.id !== "selecao" || isBrazilEvent(event, getTeam))
-            && event.status === "live").length;
-          return (
-            <button key={group.id} aria-pressed={activeGroup === group.id} onClick={() => setActiveGroup(group.id)}>
+        {availableGroups.map((group) => (
+            <button key={group.id} data-sport={group.id} aria-pressed={activeGroup === group.id} onClick={() => setActiveGroup(group.id)}>
+              <SportIcon sport={group.id} />
               {group.label}
-              {count > 0 && <span>{count} ao vivo</span>}
             </button>
-          );
-        })}
+        ))}
       </nav>
 
       <div className="vault-feed-section-heading inline-heading">
@@ -114,7 +94,7 @@ export function VaultFeedHome({
         </div>
         {favorites.length ? (
           <div className="mini-standing">
-            {favorites.slice(0, 4).map((team) => (
+            {favoriteGroups.slice(0, 4).map(({ team }) => (
               <article key={team.id}>
                 <h3>{team.name}</h3>
                 <p className="statistics-scope">{getLeague(team.leagueId).name}</p>

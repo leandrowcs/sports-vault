@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trophy } from "lucide-react";
 import { FOCUS_GROUPS, isBrazilEvent, leaguesForFocusGroup } from "../helpers/focusGroups";
 import { teamMetrics } from "../helpers/sportStatistics";
@@ -23,8 +23,9 @@ export function CompetitionsPage({
   onSelectEvent: (event: SportEvent) => void;
 }) {
   const groupLeagues = leaguesForFocusGroup(leagues, focusGroup);
-  const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
-  useEffect(() => setActiveLeagueId(null), [focusGroup]);
+  const [selection, setSelection] = useState<{ group: FocusGroupId; leagueId: string | null }>({ group: focusGroup, leagueId: null });
+  const activeLeagueId = selection.group === focusGroup ? selection.leagueId : null;
+  const setActiveLeagueId = (leagueId: string | null) => setSelection({ group: focusGroup, leagueId });
   const selectedLeagues = activeLeagueId ? groupLeagues.filter((league) => league.id === activeLeagueId) : groupLeagues;
   const leagueIds = new Set(selectedLeagues.map((league) => league.id));
 
@@ -58,11 +59,7 @@ export function CompetitionsPage({
   const groupLabel = FOCUS_GROUPS.find((group) => group.id === focusGroup)?.label ?? "Competição";
 
   return (
-    <section aria-label={groupLabel} className="competitions-page">
-      <div className="page-intro">
-        <h2>{groupLabel}</h2>
-        <p>Classificação, jogos da rodada e próxima rodada.</p>
-      </div>
+    <section aria-label={groupLabel} className="competitions-page" data-sport={focusGroup}>
       {groupLeagues.length > 1 && (
         <nav className="competition-filters" aria-label="Filtrar por competição">
           <button aria-pressed={activeLeagueId === null} onClick={() => setActiveLeagueId(null)}>Todas</button>
@@ -75,7 +72,7 @@ export function CompetitionsPage({
       {standings.length > 0 && (
         <section className="team-module">
           <header>
-            <h2>Classificação</h2>
+            <h2>Desempenho recente</h2>
           </header>
           <p className="statistics-scope">Calculada a partir dos jogos concluídos carregados; não representa a tabela oficial da temporada.</p>
           <div className="standings-table">
@@ -94,7 +91,7 @@ export function CompetitionsPage({
 
       <section className="team-module">
         <header>
-          <h2>Rodada atual e próxima</h2>
+          <h2>Ao vivo e próximos jogos</h2>
         </header>
         {liveAndUpcoming.length ? (
           <div className="game-list">

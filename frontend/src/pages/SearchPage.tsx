@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ChevronDown, Heart, Search, X } from "lucide-react";
 import type { League, SportCode, Team } from "../types/sports";
 import { groupTeams } from "../helpers/teamGroups";
+import { SportIcon } from "../components/SportIcon";
+import { getFocusGroup, getSportGroup } from "../helpers/focusGroups";
 import { TeamCrest } from "../components/TeamCrest";
 
 interface TeamSearchProps {
@@ -15,7 +17,7 @@ interface TeamSearchProps {
 const sports: { id: SportCode; name: string; color: string }[] = [
   { id: "football", name: "Futebol", color: "#7bfd8b" },
   { id: "basketball", name: "Basquete", color: "#ffbb78" },
-  { id: "american_football", name: "Futebol americano", color: "#c5d0ff" },
+  { id: "american_football", name: "Futebol americano", color: "#ff8c91" },
 ];
 
 function normalizeSearch(value: string) {
@@ -66,13 +68,13 @@ export function TeamSearch({ teams, leagues, savedTeamIds, onToggle, onSelect }:
       </div>
       <div className="competition-filters sport-search-filters" role="group" aria-label="Filtrar por esporte">
         <button aria-pressed={sportId === null} onClick={() => { setSportId(null); setCompetitionId(null); setCollapsedIds(new Set()); }}>Todos <span>{uniqueTeams.length}</span></button>
-        {availableSports.map((sport) => <button key={sport.id} aria-pressed={sportId === sport.id} onClick={() => { setSportId(sport.id); setCompetitionId(null); setCollapsedIds(new Set()); }}>{sport.name}<span>{uniqueTeams.filter((group) => group.sport === sport.id).length}</span></button>)}
+        {availableSports.map((sport) => <button key={sport.id} data-sport={getSportGroup(sport.id)} aria-pressed={sportId === sport.id} onClick={() => { setSportId(sport.id); setCompetitionId(null); setCollapsedIds(new Set()); }}><SportIcon sport={getSportGroup(sport.id)} />{sport.name}<span>{uniqueTeams.filter((group) => group.sport === sport.id).length}</span></button>)}
       </div>
       <div className="search-competition-section">
         <p className="search-filter-label">Competição</p>
         <div className="competition-filters search-competition-strip" role="group" aria-label="Filtrar por competição">
           <button aria-pressed={competitionId === null} onClick={() => { setCompetitionId(null); setCollapsedIds(new Set()); }}>Todas</button>
-          {competitions.map((league) => <button key={league.id} aria-pressed={competitionId === league.id} onClick={() => { setCompetitionId(league.id); setCollapsedIds(new Set()); }}>{league.name}</button>)}
+          {competitions.map((league) => <button key={league.id} data-sport={getFocusGroup(league)} aria-pressed={competitionId === league.id} onClick={() => { setCompetitionId(league.id); setCollapsedIds(new Set()); }}>{league.name}</button>)}
         </div>
       </div>
       <p className="search-result-count" role="status">{total} {total === 1 ? "time ou seleção" : "times e seleções"} · {results.length} {results.length === 1 ? "esporte" : "esportes"}</p>
