@@ -2498,11 +2498,18 @@
     color: var(--vault-muted);
     display: grid;
     place-items: center;
-    gap: 3px;
-    padding: 8px 5px;
-    min-width: 64px;
-    font-size: 10px;
+    gap: 2px;
+    padding: 8px 2px;
+    flex: 1;
+    min-width: 0;
+    font-size: 9px;
     font-weight: 900;
+  }
+  .app-bottom-nav button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
   .app-bottom-nav button.active {
     color: var(--vault-primary);
@@ -2906,7 +2913,6 @@
   .vault-mobile-topbar, .team-vault-topbar, .player-vault-topbar { height: calc(64px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); flex-wrap: nowrap; }
   .sport-filter-strip { top: calc(64px + env(safe-area-inset-top)); }
   .app-bottom-nav { height: calc(66px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-color: var(--vault-border); }
-  .app-bottom-nav button { min-width: 0; flex: 1; }
   .install-app-prompt { left: 50%; right: auto; transform: translateX(-50%); width: min(424px, calc(100vw - 24px)); bottom: calc(78px + env(safe-area-inset-bottom)); }
   .vault-feed-home > .preview-note { margin-inline: 16px; }
   .content:has(.vault-feed-home) > .sync-error, .content:has(.team-vault-page) > .sync-error, .content:has(.player-vault-page) > .sync-error { position: relative; z-index: 21; margin: calc(64px + env(safe-area-inset-top)) 16px 0; padding: 12px; background: var(--vault-surface); }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Compass, Heart, Home, LogIn, LogOut, Trophy } from "lucide-react";
+import { CircleDot, Compass, Flag, Goal, Heart, Home, LogIn, LogOut, Shield } from "lucide-react";
 import "./App.css";
 import { LoginScreen } from "./components/LoginScreen";
 import { TeamSearch } from "./pages/SearchPage";
@@ -27,7 +27,10 @@ interface SportsData {
 }
 const navigation: { id: View; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Início", icon: Home },
-  { id: "competitions", label: "Competições", icon: Trophy },
+  { id: "nba", label: "NBA", icon: CircleDot },
+  { id: "nfl", label: "NFL", icon: Shield },
+  { id: "futebol", label: "Futebol", icon: Goal },
+  { id: "selecao", label: "Brasil", icon: Flag },
   { id: "favorites", label: "Favoritos", icon: Heart },
 ];
 function App() {
@@ -266,27 +269,23 @@ function App() {
             leagues={data.leagues}
             getTeam={team}
             getLeague={league}
-            onOpenGames={() => setView("competitions")}
+            onOpenGames={() => setView("futebol")}
             onOpenFavorites={() => navigateTo("favorites")}
             onOpenVault={() => setView("home")}
             onOpenSearch={() => setShowSearch(true)}
             onSelectEvent={setSelectedEvent}
           />
-        ) : view === "competitions" ? (
-          <CompetitionsPage events={data.events} leagues={data.leagues} teams={data.teams} getTeam={team} getLeague={league} onSelectEvent={setSelectedEvent} />
-        ) : showSearch ? (
-          <TeamSearch teams={data.teams} leagues={data.leagues} savedTeamIds={vault.teamIds} onToggle={toggleTeam} onSelect={(selected) => { setShowSearch(false); setTeamPage(selected); }} />
+        ) : view === "favorites" ? (
+          showSearch ? (
+            <TeamSearch teams={data.teams} leagues={data.leagues} savedTeamIds={vault.teamIds} onToggle={toggleTeam} onSelect={(selected) => { setShowSearch(false); setTeamPage(selected); }} />
+          ) : (
+            <VaultPage favorites={favorites} leagues={data.leagues} onToggle={toggleTeam} onSelect={setTeamPage} onSearch={() => setShowSearch(true)} />
+          )
         ) : (
-          <VaultPage favorites={favorites} leagues={data.leagues} onToggle={toggleTeam} onSelect={setTeamPage} onSearch={() => setShowSearch(true)} />
+          <CompetitionsPage focusGroup={view} events={data.events} leagues={data.leagues} teams={data.teams} getTeam={team} getLeague={league} onSelectEvent={setSelectedEvent} />
         )}
       </main>
-      <AppBottomNav
-        active={view}
-        className="mobile-nav"
-        onOpenHome={() => navigateTo("home")}
-        onOpenCompetitions={() => navigateTo("competitions")}
-        onOpenFavorites={() => navigateTo("favorites")}
-      />
+      <AppBottomNav active={view} className="mobile-nav" onNavigate={navigateTo} />
       {(selectedTeam || selectedEvent) && (
         <DetailDialog
           key={selectedTeam?.id ?? selectedEvent?.id ?? "detail-dialog"}

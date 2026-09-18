@@ -1,10 +1,10 @@
 import type { FocusGroupId, League, SportEvent, Team } from '../types/sports'
 
 export const FOCUS_GROUPS: { id: FocusGroupId; label: string }[] = [
-  { id: 'futebol', label: 'Futebol' },
-  { id: 'selecao', label: 'Seleção' },
   { id: 'nba', label: 'NBA' },
   { id: 'nfl', label: 'NFL' },
+  { id: 'futebol', label: 'Futebol' },
+  { id: 'selecao', label: 'Brasil' },
 ]
 
 // ESPN team id for the Brazil national team, used to narrow "Seleção" leagues down to Brazil-only matches.

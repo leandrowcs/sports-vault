@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
-import { FOCUS_GROUPS, getFocusGroup, isBrazilEvent, leaguesForFocusGroup } from "../helpers/focusGroups";
+import { FOCUS_GROUPS, isBrazilEvent, leaguesForFocusGroup } from "../helpers/focusGroups";
 import { teamMetrics } from "../helpers/sportStatistics";
 import { EventCard } from "../components/EventCard";
 import type { FocusGroupId, League, SportEvent, Team } from "../types/sports";
 
 export function CompetitionsPage({
+  focusGroup,
   events,
   leagues,
   teams,
@@ -13,6 +14,7 @@ export function CompetitionsPage({
   getLeague,
   onSelectEvent,
 }: {
+  focusGroup: FocusGroupId;
   events: SportEvent[];
   leagues: League[];
   teams: Team[];
@@ -20,16 +22,15 @@ export function CompetitionsPage({
   getLeague: (id: string) => League;
   onSelectEvent: (event: SportEvent) => void;
 }) {
-  const availableGroups = FOCUS_GROUPS.filter((group) => leagues.some((league) => getFocusGroup(league) === group.id));
-  const [activeGroup, setActiveGroup] = useState<FocusGroupId>(availableGroups[0]?.id ?? "futebol");
-  const groupLeagues = leaguesForFocusGroup(leagues, activeGroup);
+  const groupLeagues = leaguesForFocusGroup(leagues, focusGroup);
   const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
+  useEffect(() => setActiveLeagueId(null), [focusGroup]);
   const selectedLeagues = activeLeagueId ? groupLeagues.filter((league) => league.id === activeLeagueId) : groupLeagues;
   const leagueIds = new Set(selectedLeagues.map((league) => league.id));
 
   const scopedEvents = events
     .filter((event) => leagueIds.has(event.leagueId))
-    .filter((event) => activeGroup !== "selecao" || isBrazilEvent(event, getTeam));
+    .filter((event) => focusGroup !== "selecao" || isBrazilEvent(event, getTeam));
   const liveAndUpcoming = scopedEvents
     .filter((event) => event.status !== "finished")
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
@@ -37,7 +38,7 @@ export function CompetitionsPage({
     .filter((event) => event.status === "finished")
     .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
 
-  const standings = activeGroup === "selecao"
+  const standings = focusGroup === "selecao"
     ? []
     : teams
       .filter((team) => leagueIds.has(team.leagueId))
@@ -54,24 +55,14 @@ export function CompetitionsPage({
       .filter((row) => row.games > 0)
       .sort((a, b) => b.wins - a.wins || b.diff - a.diff);
 
-  function selectGroup(group: FocusGroupId) {
-    setActiveGroup(group);
-    setActiveLeagueId(null);
-  }
+  const groupLabel = FOCUS_GROUPS.find((group) => group.id === focusGroup)?.label ?? "Competição";
 
   return (
-    <section aria-label="Competições" className="competitions-page">
+    <section aria-label={groupLabel} className="competitions-page">
       <div className="page-intro">
-        <h2>Competições</h2>
-        <p>Classificação, jogos da rodada e próxima rodada por competição.</p>
+        <h2>{groupLabel}</h2>
+        <p>Classificação, jogos da rodada e próxima rodada.</p>
       </div>
-      <nav className="competition-filters" aria-label="Filtrar por foco">
-        {availableGroups.map((group) => (
-          <button key={group.id} aria-pressed={activeGroup === group.id} onClick={() => selectGroup(group.id)}>
-            {group.label}
-          </button>
-        ))}
-      </nav>
       {groupLeagues.length > 1 && (
         <nav className="competition-filters" aria-label="Filtrar por competição">
           <button aria-pressed={activeLeagueId === null} onClick={() => setActiveLeagueId(null)}>Todas</button>
