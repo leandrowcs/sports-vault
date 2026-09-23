@@ -1,0 +1,66 @@
+.nba-page { min-width: 0; }
+.nba-home-week > summary { list-style: none; cursor: pointer; }
+.nba-home-week > summary::-webkit-details-marker { display: none; }
+.nba-home-week > summary > svg { transform: rotate(-90deg); flex-shrink: 0; }
+.nba-home-week[open] > summary > svg { transform: rotate(0); }
+.nba-top-conferences { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
+.nba-top-team { display: flex; align-items: center; gap: 8px; white-space: normal; }
+.nba-top-team .crest { width: 28px; height: 28px; flex-shrink: 0; }
+.nba-top-team img { width: 100%; height: 100%; object-fit: contain; }
+.nba-tabs { display: flex; gap: 0; margin-bottom: 6px; border-bottom: 1px solid var(--vault-border); background: var(--vault-bg); }
+.nba-tabs button { display: flex; flex: 1; flex-direction: row; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 40px; padding: 6px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--vault-muted); font-size: 13px; }
+.nba-tabs button small { font-size: 11px; }
+.nba-tabs button:hover { color: var(--sport-accent); background: var(--sport-soft); }
+.nba-tabs button[aria-selected="true"] { color: var(--sport-accent); border-bottom-color: var(--sport-accent); font-weight: 800; background: var(--sport-soft); }
+.nba-league-page > .nba-tabs { position: sticky; top: var(--nba-header-height, 110px); z-index: 29; }
+.nba-team-filters { margin-bottom: 6px; }
+.nba-standings-tabs { margin: 18px 0; }
+.nba-standings-tabs button { min-height: 40px; font-size: 12px; overflow-wrap: anywhere; }
+.nba-conference-toggle h2 { margin: 0; }
+.nba-conference { margin-top: 0px; }
+.nba-conference-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 10px 0; cursor: pointer; list-style: none; }
+.nba-conference-toggle::-webkit-details-marker { display: none; }
+.nba-conference-toggle h3 { margin: 0; }
+.nba-conference-toggle svg { flex-shrink: 0; transform: rotate(-90deg); }
+.nba-conference[open] > .nba-conference-toggle svg { transform: rotate(0deg); }
+.nba-conference[open] > .nba-conference-toggle { margin-bottom: 6px; }
+.nba-table-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--vault-border); border-radius: 12px; }
+.nba-table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.nba-table th, .nba-table td { padding: 6px; text-align: center; border-bottom: 1px solid var(--vault-border); font-variant-numeric: tabular-nums; }
+.nba-table th { font-weight: 600; }
+.nba-table thead { color: var(--vault-muted); background: var(--vault-surface-raised); }
+.nba-table th[scope="row"] { text-align: left; }
+.nba-table tbody tr:last-child > * { border-bottom: 0; }
+.nba-table tbody tr:hover { background: var(--sport-soft); }
+.nba-standings-table { --position-width: 40px; border-collapse: separate; border-spacing: 0; }
+.nba-standings-table .nba-position-column, .nba-standings-table .nba-team-column { position: sticky; z-index: 1; background: var(--vault-surface); }
+.nba-standings-table .nba-position-column { left: 0; width: var(--position-width); min-width: var(--position-width); max-width: var(--position-width); }
+.nba-standings-table .nba-team-column { left: var(--position-width); box-shadow: 3px 0 0 var(--vault-border); }
+.nba-standings-table thead .nba-position-column, .nba-standings-table thead .nba-team-column { z-index: 2; background: var(--vault-surface-raised); }
+.nba-standings-table tbody tr:hover .nba-position-column, .nba-standings-table tbody tr:hover .nba-team-column { background: var(--vault-surface-raised); }
+.nba-standings-table .nba-team-link { width: clamp(120px, 28vw, 180px); white-space: normal; }
+.nba-team-link { display: flex; align-items: center; font-size: 12px; gap: 6px; border: 0; background: transparent; color: var(--vault-ink); text-align: left; min-height: 44px; padding: 3px; }
+.nba-team-link:hover { color: var(--sport-accent); }
+.nba-team-link .team-crest, .nba-team-link .crest, .nba-team-link img { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+.nba-date { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+.nba-date input { color: var(--vault-ink); background: var(--vault-surface-raised); border: 1px solid var(--vault-border); border-radius: 8px; padding: 10px; }
+.nba-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 12px; }
+.nba-metrics article { display: grid; gap: 10px; padding: 18px; background: var(--vault-surface-raised); border-radius: 12px; }
+.nba-metrics span { color: var(--vault-muted); font-size: 13px; }
+.nba-metrics strong { font-size: 26px; }
+.nba-roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+.nba-roster article { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--vault-border); }
+.nba-roster img { width: 30px; height: 30px; object-fit: contain; }
+.nba-roster p { color: var(--vault-muted); font-size: 13px; margin: 8px 0 0; }
+.nba-error { padding: 16px; border: 1px solid var(--vault-danger); border-radius: 12px; margin: 16px 0; }
+.nba-error button, .nba-more { min-height: 44px; border: 1px solid var(--vault-border); border-radius: 8px; color: var(--vault-ink); background: var(--vault-surface-raised); padding: 10px 16px; }
+.nba-more { margin-top: 16px; }
+.nba-game-phase { color: var(--vault-muted); font-size: 12px; margin: 6px 0 6px; }
+.nba-game-dialog { position: fixed; width: min(1000px, calc(100vw - 24px)); max-height: 90dvh; padding: 28px; border: 1px solid var(--vault-border); border-radius: 20px; background: var(--vault-surface); color: var(--vault-ink); overflow: auto; }
+.nba-game-dialog::backdrop { background: #000a; backdrop-filter: blur(4px); }
+.nba-game-dialog h3 { margin-top: 30px; }
+.nba-scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 24px 0; }
+.nba-scoreboard > div { display: grid; gap: 16px; padding: 16px; background: var(--vault-surface-raised); border-radius: 12px; }
+.nba-scoreboard strong { font-size: 40px; color: var(--sport-accent); }
+.nba-player-table th[scope="row"] { position: sticky; left: 0; background: var(--vault-surface); }
+@media (max-width: 600px) { .nba-game-dialog { padding: 18px; } .nba-scoreboard { gap: 10px; } .nba-scoreboard .nba-team-link { flex-direction: column; align-items: flex-start; font-size: 13px; } .nba-table th, .nba-table td { padding: 6px; } }

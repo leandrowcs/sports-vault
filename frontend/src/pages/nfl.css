@@ -1,0 +1,30 @@
+.nfl-page { min-width: 0; }
+.nfl-tabs { margin-bottom: 6px; }
+.nfl-page > .nfl-tabs { position: sticky; top: var(--nba-header-height, 0px); z-index: 29; }
+.nfl-schedule-header { position: sticky; top: calc(var(--nba-header-height, 0px) + var(--nfl-season-tabs-height, 0px)); z-index: 28; padding: 6px 0; margin-bottom: 6px; background: var(--vault-surface); border-bottom: 1px solid var(--vault-border); }
+.nfl-tabs button { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; flex-wrap: wrap; }
+.nfl-conference-logo, .nfl-group-heading img { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
+.nfl-group-heading { display: flex; gap: 12px; align-items: center; }
+.nfl-section { margin-top: 6px; }
+.nfl-section > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; font-weight: 800; min-height: 36px; list-style: none; }
+.nfl-section > summary::-webkit-details-marker { display: none; }
+.nfl-section > summary > svg { transform: rotate(-90deg); flex-shrink: 0; }
+.nfl-section[open] > summary > svg { transform: rotate(0); }
+.nfl-section-body { padding-top: 6px; min-width: 0; }
+.nfl-section .nfl-section { background: var(--vault-bg); padding: 14px; }
+.nfl-page .nba-standings-table .nba-team-column { left: 0; }
+.nfl-selectors { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.nfl-selectors label { display: grid; gap: 8px; font-size: 13px; flex: 1; min-width: 150px; }
+.nfl-selectors select { background: var(--vault-bg); color: var(--vault-ink); border: 1px solid var(--vault-border); border-radius: 8px; padding: 12px; width: 100%; }
+.nfl-week-pagination { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-bottom: 16px; }
+.nfl-week-pagination button { display: flex; align-items: center; font-size: 12px; justify-content: center; gap: 6px; min-height: 44px; padding: 6px; border: 1px solid var(--vault-border); border-radius: 8px; background: var(--vault-bg); color: var(--vault-ink); }
+.nfl-week-pagination button:disabled { opacity: .4; cursor: not-allowed; }
+.nfl-week-pagination > div { display: grid; gap: 4px; font-size: 12px; text-align: center; }
+.nfl-week-pagination small { color: var(--vault-muted); }
+@media (max-width: 480px) { .nfl-week-pagination button span { display: none; } .nfl-week-pagination strong { font-size: 13px; } }
+.nfl-roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.nfl-roster article { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--vault-border); }
+.nfl-roster img { width: 54px; height: 54px; object-fit: contain; }
+.nfl-roster p, .nfl-roster small { color: var(--vault-muted); font-size: 12px; margin: 6px 0; }
+.nfl-page summary:focus-visible, .nfl-page button:focus-visible, .nfl-page select:focus-visible { outline: 2px solid var(--sport-accent); outline-offset: 4px; }
+@media (max-width: 600px) { .nfl-tabs button { font-size: 12px; padding: 6px; } .nfl-roster { grid-template-columns: 1fr; } .nfl-section .nfl-section { padding: 10px; } }

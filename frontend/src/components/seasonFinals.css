@@ -1,0 +1,28 @@
+.season-finals { border-color: var(--sport-accent); }
+.season-finals > header h2, .finals-champion > span { display: flex; align-items: center; gap: 8px; }
+.season-finals > header h2 > svg, .finals-champion > span > svg { flex-shrink: 0; color: var(--sport-accent); }
+.finals-series-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.finals-results > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; cursor: pointer; list-style: none; font-weight: 700; font-size: 13px; }
+.finals-results > summary::-webkit-details-marker { display: none; }
+.finals-results > summary > svg { flex-shrink: 0; transform: rotate(-90deg); }
+.finals-results[open] > summary > svg { transform: rotate(0); }
+.finals-results > summary:focus-visible { outline: 2px solid var(--sport-accent); outline-offset: 2px; }
+.finals-series { min-width: 0; padding: 12px; border: 1px solid var(--vault-border); border-radius: var(--vault-radius-card); background: var(--vault-bg); }
+.finals-series h3 { margin: 0 0 12px; font-size: 16px; }
+.finals-champion { padding: 12px; margin-bottom: 12px; border-radius: var(--vault-radius-card); background: var(--sport-soft); }
+.finals-champion > span { color: var(--sport-accent); font-size: 12px; font-weight: 800; }
+.finals-series-score > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.finals-series-score > div > strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+.finals-games { list-style: none; padding: 0; margin: 0; }
+.finals-games li + li { border-top: 1px solid var(--vault-border); }
+.finals-games button { display: grid; gap: 6px; width: 100%; min-height: 44px; padding: 12px 0; border: 0; background: transparent; color: var(--vault-ink); text-align: left; font-size: 13px; line-height: 1.5; }
+.finals-games button:hover { background: var(--sport-soft); }
+.finals-games button:focus-visible { outline: 2px solid var(--sport-accent); outline-offset: 2px; }
+.finals-game-meta, .finals-games small { color: var(--vault-muted); font-size: 11px; }
+.nfl-super-bowl > .nfl-section-body > .game-list { grid-template-columns: minmax(0, 1fr); }
+.super-bowl-summary { display: grid; gap: 12px; min-width: 0; flex: 1; }
+.super-bowl-title { display: flex; align-items: center; gap: 8px; }
+.super-bowl-title > svg { flex-shrink: 0; color: var(--sport-accent); }
+.super-bowl-champion { display: grid; gap: 8px; margin-bottom: 0; }
+.super-bowl-champion > span:last-child { color: var(--vault-ink); font-size: 16px; }
+.super-bowl-champion .team-crest, .super-bowl-champion .crest { width: 36px; height: 36px; flex-shrink: 0; }
