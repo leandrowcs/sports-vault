@@ -19,7 +19,7 @@ export function EventCard({
 }) {
   const date = formatEventCardDate(event.startsAt);
   return (
-    <article className={onSelect ? "event-card selectable" : "event-card"} onClick={() => onSelect?.(event)} onKeyDown={(keyEvent) => { if (onSelect && (keyEvent.key === "Enter" || keyEvent.key === " ")) { keyEvent.preventDefault(); onSelect(event); } }} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined}>
+    <article data-sport={getFocusGroup(competition)} className={onSelect ? "event-card selectable" : "event-card"} onClick={() => onSelect?.(event)} onKeyDown={(keyEvent) => { if (onSelect && (keyEvent.key === "Enter" || keyEvent.key === " ")) { keyEvent.preventDefault(); onSelect(event); } }} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined}>
       <div className="event-meta">
         <span className="event-competition" data-sport={getFocusGroup(competition)}><SportIcon sport={getFocusGroup(competition)} size={16} />{competition.name}</span>
         {event.status === "live" ? (

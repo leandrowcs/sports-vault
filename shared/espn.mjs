@@ -407,6 +407,21 @@ export async function loadEventSummary(leagueId, eventId) {
   );
   const statistics = buildEventSummaryStats(def, competition, homeStats, awayStats);
   const leaders = buildEventSummaryLeaders(def, competitors);
+  const scorers = (payload.scoringPlays ?? competition?.scoringPlays ?? [])
+    .map((play) => {
+      const teamId = play.team?.id;
+      const player = play.athletesInvolved?.map((athlete) =>
+        athlete.displayName || athlete.fullName || athlete.athlete?.displayName || athlete.athlete?.fullName,
+      ).filter(Boolean).join(", ");
+      if (!teamId || !player) return null;
+      const minute = play.clock?.displayValue || play.period?.displayValue;
+      return {
+        teamId: `${leagueId}-${teamId}`,
+        player,
+        ...(minute ? { minute } : {}),
+      };
+    })
+    .filter(Boolean);
 
   return {
     eventId,
@@ -415,6 +430,7 @@ export async function loadEventSummary(leagueId, eventId) {
     note: payload.news?.[0]?.headline || competition?.status?.type?.detail || "",
     statistics,
     leaders,
+    scorers,
   };
 }
 

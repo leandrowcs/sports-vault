@@ -40,6 +40,13 @@ export function VaultFeedHome({ events, getTeam, getLeague, leagues, onSelectEve
   const isBasketball = activeGroup === "nba";
   const isNFL = activeGroup === "nfl";
   const groups = groupSchedule(groupEvents, (event) => isBasketball || isNFL ? weekLabel(event) : getLeague(event.leagueId).name);
+  const brazilUpcoming = groupEvents
+    .filter((event) => event.status !== "finished")
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  const brazilRecentResults = groupEvents
+    .filter((event) => event.status === "finished")
+    .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt))
+    .slice(0, 10);
 
   function datedGames(games: SportEvent[]) {
     return groupSchedule(games, eventDay).map(([day, dayEvents]) => (
@@ -63,7 +70,17 @@ export function VaultFeedHome({ events, getTeam, getLeague, leagues, onSelectEve
         {availableGroups.map((group) => <button key={group.id} data-sport={group.id} aria-pressed={activeGroup === group.id} onClick={() => setActiveGroup(group.id)}><CompetitionIcon sport={group.id} size={36} />{group.label}</button>)}
       </nav>
       {isBasketball ? <Suspense fallback={<p role="status">Carregando NBA…</p>}><NbaHomeFeed onSelectEvent={onSelectEvent} onViewStandings={onViewNba} /></Suspense> : isNFL ? <Suspense fallback={<p role="status">Carregando NFL…</p>}><NflHomeFeed onSelectEvent={onSelectEvent} onViewStandings={onViewNfl} /></Suspense> : <>
-      <div className="vault-feed-section-heading inline-heading"><h2>{isBasketball ? "Jogos da semana" : "Jogos da rodada"}</h2><span>{groupEvents.length} jogos</span></div>
+      <div className="vault-feed-section-heading inline-heading"><h2>{activeGroup === "selecao" ? "Jogos da Seleção" : "Jogos da rodada"}</h2><span>{groupEvents.length} jogos</span></div>
+      {activeGroup === "selecao" ? <div className="schedule-groups">
+        <section className="team-module">
+          <header><h2>Próximos jogos</h2></header>
+          {brazilUpcoming.length ? <div className="game-list">{brazilUpcoming.map((event) => <EventCard key={event.id} event={event} home={getTeam(event.homeTeamId)} away={getTeam(event.awayTeamId)} competition={getLeague(event.leagueId)} onSelect={onSelectEvent} />)}</div> : <p className="standing-empty">Nenhum jogo próximo disponível.</p>}
+        </section>
+        <section className="team-module">
+          <header><h2>Últimos resultados</h2></header>
+          {brazilRecentResults.length ? <div className="game-list">{brazilRecentResults.map((event) => <EventCard key={event.id} event={event} home={getTeam(event.homeTeamId)} away={getTeam(event.awayTeamId)} competition={getLeague(event.leagueId)} onSelect={onSelectEvent} />)}</div> : <p className="standing-empty">Nenhum resultado disponível.</p>}
+        </section>
+      </div> : <>
       <div className="schedule-groups" key={activeGroup}>
         {groups.map(([title, games]) => (
           <ScheduleGroup key={title} title={title} count={games.length}>
@@ -85,6 +102,7 @@ export function VaultFeedHome({ events, getTeam, getLeague, leagues, onSelectEve
         ))}
       </div>
       {!groupEvents.length && <div className="empty-state compact-empty"><Trophy size={25} /><h3>Nenhum jogo disponível.</h3><p>Volte em breve para acompanhar a rodada.</p></div>}
+      </>}
       </>}
     </section>
   );

@@ -7,6 +7,7 @@ export interface Team { id: string; name: string; shortName: string; leagueId: s
 export interface SportEvent { id: string; leagueId: string; homeTeamId: string; awayTeamId: string; startsAt: string; status: GameStatus; venue: string; homeScore?: number; awayScore?: number; week?: number; seasonPhase?: string }
 export interface EventSummaryStat { key: string; label: string; homeValue: string; awayValue: string }
 export interface EventSummaryLeader { key: string; label: string; homeValue: string; awayValue: string }
+export interface EventGoalScorer { teamId: string; player: string; minute?: string }
 export interface SportEventSummary {
   eventId: string
   sport: SportCode
@@ -14,6 +15,7 @@ export interface SportEventSummary {
   note?: string
   statistics: EventSummaryStat[]
   leaders: EventSummaryLeader[]
+  scorers?: EventGoalScorer[]
 }
 export interface FootballPlayerSeasonStats {
   sport?: 'football'

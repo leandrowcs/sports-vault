@@ -459,7 +459,7 @@
   border-radius: var(--vault-radius-card);
   background: var(--vault-surface);
   border: 1px solid var(--vault-border);
-  padding: 32px;
+  padding: 20px;
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
 }
 .dialog-close {
@@ -497,8 +497,8 @@
 .detail-venue {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin: 22px 0 0;
+  gap: 5px;
+  margin: 10px 0 0;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -664,8 +664,8 @@
   font: inherit;
 }
 .event-summary-panel {
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--vault-border);
 }
 .event-summary-header {
@@ -686,14 +686,14 @@
   letter-spacing: 0.06em;
 }
 .event-summary-note {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   color: var(--vault-muted);
   font-size: 12px;
   line-height: 1.6;
 }
 .event-summary-table {
   display: grid;
-  gap: 8px;
+  gap: 5px;
 }
 .event-summary-team-headings,
 .event-summary-row {
@@ -765,6 +765,28 @@
 .event-leader-card small {
   color: var(--vault-muted);
   font-size: 12px;
+}
+.event-scorers {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.event-scorers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-card);
+  background: rgba(15, 19, 28, 0.72);
+}
+.event-scorers li span {
+  color: var(--vault-muted);
+  font-size: 12px;
+  text-align: right;
 }
 .h2h-dialog {
   max-height: 86vh;
@@ -3441,6 +3463,7 @@
 }
 .team-crest-image {
   background: #f4f6fa;
+  overflow: hidden;
 }
 .team-crest-image img {
   width: 100%;
@@ -3658,6 +3681,9 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+.event-card[data-sport="selecao"] .matchup .team-crest-image img {
+  object-fit: cover;
 }
 .competition-logo {
   flex: 0 0 auto;
@@ -3982,6 +4008,7 @@
 }
 .schedule-content {
   padding: 12px;
+  grid-template-columns: repeat(2, 1fr);
 }
 .schedule-day > h3 {
   margin: 0 0 12px;

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import { sportsService } from "../services/sportsService";
 import type { EventSummaryLeader, EventSummaryStat, League, Player, SportEvent, SportEventSummary, Team } from "../types/sports";
+import { isBrazilEvent } from "../helpers/focusGroups";
 import { formatEventDetailStatus } from "../helpers/eventDates";
 export function EventSummaryStats({
   home,
@@ -48,11 +49,16 @@ export function DetailDialog({ team, event, players, teams, getTeam, getLeague, 
   const home = event ? getTeam(event.homeTeamId) : null;
   const away = event ? getTeam(event.awayTeamId) : null;
   const roster = team ? players.filter((player) => player.teamId === team.id) : [];
+  const isBrazilResult = event?.status === "finished" && competition?.sport === "football" && isBrazilEvent(event, getTeam);
   const rivals = team ? teams.filter((item) => item.leagueId === team.leagueId && item.id !== team.id) : [];
   const [rivalId, setRivalId] = useState(rivals[0]?.id ?? "");
   const [eventSummary, setEventSummary] = useState<SportEventSummary | null>(null);
   const [isLoadingEventSummary, setIsLoadingEventSummary] = useState(Boolean(event));
   const [eventSummaryError, setEventSummaryError] = useState<string | null>(null);
+  const eventScorers = eventSummary?.scorers?.flatMap((scorer, index) => {
+    const scorerTeam = [home, away].find((item) => item?.id === scorer.teamId);
+    return scorerTeam ? [{ ...scorer, team: scorerTeam, key: `${scorer.teamId}-${scorer.player}-${index}` }] : [];
+  }) ?? [];
 
   useEffect(() => {
     if (!event) return;
@@ -131,9 +137,9 @@ export function DetailDialog({ team, event, players, teams, getTeam, getLeague, 
               </div>
               {eventSummary?.note && <p className="event-summary-note">{eventSummary.note}</p>}
               {isLoadingEventSummary ? (
-                <p className="detail-copy">Carregando estatísticas...</p>
+                <p className="detail-copy">{isBrazilResult ? "Carregando resumo e goleadores..." : "Carregando estatísticas..."}</p>
               ) : eventSummaryError ? (
-                <p className="detail-copy" role="alert">{eventSummaryError}</p>
+                <p className="detail-copy" role="alert">{isBrazilResult ? "Não foi possível carregar o resumo e os goleadores da partida." : eventSummaryError}</p>
               ) : eventSummary ? (
                 <>
                   {eventSummary.statistics.length > 0 ? (
@@ -147,9 +153,19 @@ export function DetailDialog({ team, event, players, teams, getTeam, getLeague, 
                       <EventSummaryLeaders leaders={eventSummary.leaders} />
                     </>
                   )}
+                  {isBrazilResult && (
+                    <>
+                      <h3 className="player-section-title">Gols</h3>
+                      {eventScorers.length ? <ul className="event-scorers">
+                        {eventScorers.map((scorer) => <li key={scorer.key}>
+                          <b>{scorer.player}</b><span>{scorer.team.name}{scorer.minute ? ` · ${scorer.minute}` : ""}</span>
+                        </li>)}
+                      </ul> : <p className="detail-copy">Goleadores indisponíveis para esta partida.</p>}
+                    </>
+                  )}
                 </>
               ) : (
-                <p className="detail-copy">Resumo estatístico indisponível para esta partida.</p>
+                <p className="detail-copy">{isBrazilResult ? "Resumo e goleadores indisponíveis para esta partida." : "Resumo estatístico indisponível para esta partida."}</p>
               )}
             </section>
           </>
