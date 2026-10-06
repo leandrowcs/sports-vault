@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { shiftCalendarDate } from '../helpers/homeSchedule';
 import { useNba, useNbaSeason, seasonLabel } from '../hooks/useNba';
 import { NbaEvents, NbaPanel, NbaQueryState, NbaSeasons, NbaTeamButton } from '../components/NbaCommon';
 import type { NbaConference, NbaEvent } from '../types/nba';
@@ -21,10 +22,14 @@ function NbaSeasonContent({ year, previous, onTeam, onEvent }: { year: number; p
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const rows = standingTab === 2 ? overallStandings(standings.data ?? []) : standings.data?.find((group) => group.name === (standingTab === 0 ? 'Leste' : 'Oeste'))?.rows ?? [];
   const calendar = useNba<NbaEvent[]>('calendar', { year, date }, Boolean(date), !previous);
+  const [standingsOpen, setStandingsOpen] = useState(true);
+  const minDate = `${year - 1}-09-01`;
+  const maxDate = previous ? lastGame.data?.date ?? `${year}-09-30` : `${year}-09-30`;
   return <>
     {previous && <NbaFinals year={year} onTeam={onTeam} onEvent={onEvent} />}
     <section className="team-module">
-      <header><h2>{previous ? 'Resumo' : 'Classificação'} · {seasonLabel(year)}</h2></header>
+      <header><h2><button type="button" className="schedule-toggle" aria-expanded={standingsOpen} aria-controls={`standings-body-${year}`} onClick={() => setStandingsOpen((value) => !value)}><span>{previous ? 'Resumo' : 'Classificação'} · {seasonLabel(year)}</span><ChevronDown size={18} aria-hidden="true" /></button></h2></header>
+      <div id={`standings-body-${year}`} hidden={!standingsOpen}>
       <p className="statistics-scope">Temporada regular · Classificação fornecida pela ESPN. PCT: aproveitamento; GB: jogos atrás; PF/PC: pontos feitos/sofridos por jogo.</p>
       <div className="nba-tabs nba-standings-tabs" role="tablist" aria-label="Classificação NBA">
         {standingTabs.map((label, index) => <button key={label} ref={(element) => { tabButtons.current[index] = element; }} role="tab" id={`standings-tab-${year}-${index}`} aria-controls={`standings-panel-${year}`} aria-selected={standingTab === index} tabIndex={standingTab === index ? 0 : -1} onClick={() => setStandingTab(index)} onKeyDown={(event) => {
@@ -44,12 +49,17 @@ function NbaSeasonContent({ year, previous, onTeam, onEvent }: { year: number; p
           <tbody>{rows.map((row) => <tr key={row.team.id}><td className="nba-position-column">{row.position}</td><th scope="row" className="nba-team-column"><NbaTeamButton team={row.team} onSelect={onTeam} /></th>{columns.map(([, key]) => <td key={key}>{row.stats[key] ?? '—'}</td>)}</tr>)}</tbody>
         </table></div>}
       </div>
+      </div>
     </section>
     <section className="team-module">
       <header><h2>{previous ? 'Resultados da temporada anterior' : 'Calendário e placares'}</h2></header>
       {previous && !selectedDate && <NbaQueryState query={lastGame} />}
       {previous && lastGame.data?.date === null && <p className="standing-empty">Nenhum jogo concluído disponível nesta temporada.</p>}
-      <label className="nba-date">Data dos jogos<input type="date" value={date} min={`${year - 1}-09-01`} max={previous ? lastGame.data?.date ?? `${year}-09-30` : `${year}-09-30`} onChange={(event) => { if (event.target.value) setDate(event.target.value); }} /></label>
+      <div className="nba-date-nav">
+        <button type="button" className="nba-date-step" aria-label="Dia anterior" disabled={!date || date <= minDate} onClick={() => setDate(shiftCalendarDate(date, -1))}><ChevronLeft size={18} aria-hidden="true" /></button>
+        <label className="nba-date">Data dos jogos<input type="date" value={date} min={minDate} max={maxDate} onChange={(event) => { if (event.target.value) setDate(event.target.value); }} /></label>
+        <button type="button" className="nba-date-step" aria-label="Próximo dia" disabled={!date || date >= maxDate} onClick={() => setDate(shiftCalendarDate(date, 1))}><ChevronRight size={18} aria-hidden="true" /></button>
+      </div>
       {date && <p className="statistics-scope">{eventTimeZoneLabel(new Date(`${date}T12:00:00Z`))}. Apenas jogos da temporada {seasonLabel(year)}. {previous ? '' : 'Atualização automática a cada minuto.'}</p>}
       {date && <NbaQueryState query={calendar} />}
       {calendar.data && <NbaEvents events={calendar.data} year={year} onSelect={onEvent} />}

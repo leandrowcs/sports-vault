@@ -44,6 +44,12 @@
 .nba-team-link .team-crest, .nba-team-link .crest, .nba-team-link img { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
 .nba-date { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
 .nba-date input { color: var(--vault-ink); background: var(--vault-surface-raised); border: 1px solid var(--vault-border); border-radius: 8px; padding: 10px; }
+.nba-date-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nba-date-step { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--vault-border); border-radius: 8px; background: var(--vault-surface-raised); color: var(--vault-ink); cursor: pointer; }
+.nba-date-step:disabled { opacity: .4; cursor: not-allowed; }
+.nba-date-step:focus-visible { outline: 2px solid var(--vault-primary); outline-offset: 2px; }
+.team-module > header > h2 > .schedule-toggle { border-radius: 8px; }
+.team-module [hidden] { display: none; }
 .nba-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 12px; }
 .nba-metrics article { display: grid; gap: 10px; padding: 18px; background: var(--vault-surface-raised); border-radius: 12px; }
 .nba-metrics span { color: var(--vault-muted); font-size: 13px; }
