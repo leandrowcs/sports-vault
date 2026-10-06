@@ -22,14 +22,13 @@ function NbaSeasonContent({ year, previous, onTeam, onEvent }: { year: number; p
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const rows = standingTab === 2 ? overallStandings(standings.data ?? []) : standings.data?.find((group) => group.name === (standingTab === 0 ? 'Leste' : 'Oeste'))?.rows ?? [];
   const calendar = useNba<NbaEvent[]>('calendar', { year, date }, Boolean(date), !previous);
-  const [standingsOpen, setStandingsOpen] = useState(true);
   const minDate = `${year - 1}-09-01`;
   const maxDate = previous ? lastGame.data?.date ?? `${year}-09-30` : `${year}-09-30`;
   return <>
     {previous && <NbaFinals year={year} onTeam={onTeam} onEvent={onEvent} />}
-    <section className="team-module">
-      <header><h2><button type="button" className="schedule-toggle" aria-expanded={standingsOpen} aria-controls={`standings-body-${year}`} onClick={() => setStandingsOpen((value) => !value)}><span>{previous ? 'Resumo' : 'Classificação'} · {seasonLabel(year)}</span><ChevronDown size={18} aria-hidden="true" /></button></h2></header>
-      <div id={`standings-body-${year}`} hidden={!standingsOpen}>
+    <details className="team-module nba-conference" open>
+      <summary className="nba-conference-toggle"><h2>{previous ? 'Resumo' : 'Classificação'} · {seasonLabel(year)}</h2><ChevronDown size={20} aria-hidden="true" /></summary>
+      <div>
       <p className="statistics-scope">Temporada regular · Classificação fornecida pela ESPN. PCT: aproveitamento; GB: jogos atrás; PF/PC: pontos feitos/sofridos por jogo.</p>
       <div className="nba-tabs nba-standings-tabs" role="tablist" aria-label="Classificação NBA">
         {standingTabs.map((label, index) => <button key={label} ref={(element) => { tabButtons.current[index] = element; }} role="tab" id={`standings-tab-${year}-${index}`} aria-controls={`standings-panel-${year}`} aria-selected={standingTab === index} tabIndex={standingTab === index ? 0 : -1} onClick={() => setStandingTab(index)} onKeyDown={(event) => {
@@ -50,7 +49,7 @@ function NbaSeasonContent({ year, previous, onTeam, onEvent }: { year: number; p
         </table></div>}
       </div>
       </div>
-    </section>
+    </details>
     <section className="team-module">
       <header><h2>{previous ? 'Resultados da temporada anterior' : 'Calendário e placares'}</h2></header>
       {previous && !selectedDate && <NbaQueryState query={lastGame} />}
