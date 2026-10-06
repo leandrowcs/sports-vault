@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useNba, useNbaSeason, seasonLabel } from '../hooks/useNba';
 import { currentWeekStart, eventDay, groupSchedule, shiftCalendarDate } from '../helpers/homeSchedule';
@@ -33,11 +32,10 @@ function Week({ start, year, next, onSelectEvent }: { start: string; year: numbe
 function SeasonFeed({ year, onSelectEvent, onViewStandings }: { year: number; onSelectEvent: (event: SportEvent) => void; onViewStandings: () => void }) {
   const standings = useNba<NbaConference[]>('standings', { year });
   const start = currentWeekStart();
-  const [open, setOpen] = useState(true);
   return <>
-    <section className="team-module nba-home-standings" aria-label="Resumo da classificação NBA">
-      <header><h2><button type="button" className="schedule-toggle" aria-expanded={open} aria-controls="nba-home-standings-body" onClick={() => setOpen((value) => !value)}><span>Classificação · {seasonLabel(year)}</span><ChevronDown size={18} aria-hidden="true" /></button></h2></header>
-      <div id="nba-home-standings-body" hidden={!open}>
+    <details className="team-module nba-conference nba-home-standings" aria-label="Resumo da classificação NBA" open>
+      <summary className="nba-conference-toggle"><h2>Classificação · {seasonLabel(year)}</h2><ChevronDown size={20} aria-hidden="true" /></summary>
+      <div>
       <p className="statistics-scope">Os 4 primeiros de cada conferência · Temporada regular</p>
       <NbaQueryState query={standings} />
       {standings.data && !standings.data.some((group) => group.rows.length) && <p className="standing-empty">A classificação ainda não foi publicada para esta temporada.</p>}
@@ -48,7 +46,7 @@ function SeasonFeed({ year, onSelectEvent, onViewStandings }: { year: number; on
       </section>)}</div>
       <button className="nba-more" onClick={onViewStandings}>Ver classificação completa</button>
       </div>
-    </section>
+    </details>
     <div className="vault-feed-section-heading"><h2>Jogos da semana</h2></div>
     <div className="schedule-groups"><Week key={start} year={year} start={start} next={false} onSelectEvent={onSelectEvent} /><Week key={shiftCalendarDate(start, 7)} year={year} start={shiftCalendarDate(start, 7)} next onSelectEvent={onSelectEvent} /></div>
   </>;
