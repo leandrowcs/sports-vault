@@ -12,10 +12,10 @@ const NflHomeFeed = lazy(() => import('../components/NflHomeFeed').then((module)
 const brazilianLeaguePriority = ["brasileirao-a", "brasileirao-b", "copa-do-brasil", "brasileirao-c", "brasileirao-d"];
 const optionalBrazilianLeagues = new Set(["brasileirao-c", "brasileirao-d"]);
 
-function ScheduleGroup({ title, count, children, initiallyOpen = true }: { title: string; count: number; children: ReactNode; initiallyOpen?: boolean }) {
+function ScheduleGroup({ title, count, children, initiallyOpen = true, className }: { title: string; count: number; children: ReactNode; initiallyOpen?: boolean; className?: string }) {
   const [open, setOpen] = useState(initiallyOpen);
   return (
-    <section className="schedule-group">
+    <section className={`schedule-group${className ? ` ${className}` : ""}`}>
       <button className="schedule-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span>{title}</span><span className="schedule-count">{count} {count === 1 ? "jogo" : "jogos"}</span><ChevronDown size={18} />
       </button>
@@ -95,7 +95,7 @@ export function VaultFeedHome({ events, getTeam, getLeague, leagues, onSelectEve
       </div> : <>
       <div className="schedule-groups" key={activeGroup}>
         {groups.map(([title, games]) => (
-          <ScheduleGroup key={title} title={title} count={games.length}>
+          <ScheduleGroup key={title} title={title} count={games.length} className={activeGroup === "futebol" ? "schedule-group--football-feed" : undefined}>
             {isNFL && <section className="round-statistics" aria-label="Estatísticas da rodada">
               <h3>Estatísticas da rodada</h3>
               <dl>
