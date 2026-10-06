@@ -9,6 +9,8 @@ import type { FocusGroupId, League, SportEvent, Team } from "../types/sports";
 import { eventTimeZoneLabel } from "../helpers/eventDates";
 const NbaHomeFeed = lazy(() => import('../components/NbaHomeFeed').then((module) => ({ default: module.NbaHomeFeed })));
 const NflHomeFeed = lazy(() => import('../components/NflHomeFeed').then((module) => ({ default: module.NflHomeFeed })));
+const brazilianLeaguePriority = ["brasileirao-a", "brasileirao-b", "copa-do-brasil", "brasileirao-c", "brasileirao-d"];
+const optionalBrazilianLeagues = new Set(["brasileirao-c", "brasileirao-d"]);
 
 function ScheduleGroup({ title, count, children, initiallyOpen = true }: { title: string; count: number; children: ReactNode; initiallyOpen?: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
@@ -35,11 +37,21 @@ export function VaultFeedHome({ events, getTeam, getLeague, leagues, onSelectEve
   const [activeGroup, setActiveGroup] = useState<FocusGroupId>(() => availableGroups.find((group) => events.some((event) =>
     getFocusGroup(getLeague(event.leagueId)) === group.id && (group.id !== "selecao" || isBrazilEvent(event, getTeam)),
   ))?.id ?? availableGroups[0]?.id ?? "futebol");
+  const currentYear = new Date().getFullYear();
+  const currentYearBrazilianLeagues = new Set(events
+    .filter((event) => optionalBrazilianLeagues.has(event.leagueId) && new Date(event.startsAt).getFullYear() === currentYear)
+    .map((event) => event.leagueId));
   const groupEvents = events.filter((event) => getFocusGroup(getLeague(event.leagueId)) === activeGroup)
-    .filter((event) => activeGroup !== "selecao" || isBrazilEvent(event, getTeam));
+    .filter((event) => activeGroup !== "selecao" || isBrazilEvent(event, getTeam))
+    .filter((event) => activeGroup !== "futebol" || !optionalBrazilianLeagues.has(event.leagueId) || currentYearBrazilianLeagues.has(event.leagueId));
   const isBasketball = activeGroup === "nba";
   const isNFL = activeGroup === "nfl";
-  const groups = groupSchedule(groupEvents, (event) => isBasketball || isNFL ? weekLabel(event) : getLeague(event.leagueId).name);
+  const groups = groupSchedule(groupEvents, (event) => isBasketball || isNFL ? weekLabel(event) : getLeague(event.leagueId).name)
+    .sort(([, firstGames], [, secondGames]) => {
+      const firstIndex = brazilianLeaguePriority.indexOf(firstGames[0]?.leagueId ?? "");
+      const secondIndex = brazilianLeaguePriority.indexOf(secondGames[0]?.leagueId ?? "");
+      return (firstIndex < 0 ? brazilianLeaguePriority.length : firstIndex) - (secondIndex < 0 ? brazilianLeaguePriority.length : secondIndex);
+    });
   const brazilUpcoming = groupEvents
     .filter((event) => event.status !== "finished")
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));

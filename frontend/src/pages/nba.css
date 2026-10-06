@@ -328,9 +328,9 @@
   position: fixed;
   width: min(1000px, calc(100vw - 24px));
   max-height: 90dvh;
-  padding: 28px;
+  padding: 10px;
   border: 1px solid var(--vault-border);
-  border-radius: 20px;
+  border-radius: 10px;
   background: var(--vault-surface);
   color: var(--vault-ink);
   overflow: auto;
@@ -340,10 +340,10 @@
   backdrop-filter: blur(4px);
 }
 .nba-game-dialog h3 {
-  margin-top: 30px;
+  margin: 10px 0;
 }
 .nba-player-tabs {
-  margin: 12px 0;
+  margin: 10px 0;
 }
 .nba-player-tabs button {
   min-height: 42px;
@@ -372,7 +372,7 @@
 }
 @media (max-width: 600px) {
   .nba-game-dialog {
-    padding: 18px;
+    padding: 10px;
   }
   .nba-scoreboard {
     gap: 10px;

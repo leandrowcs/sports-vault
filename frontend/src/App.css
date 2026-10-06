@@ -493,6 +493,7 @@
   color: var(--vault-muted);
   font-size: 13px;
   line-height: 1.5;
+  margin: 5px 0;
 }
 .detail-venue {
   display: flex;
@@ -4074,7 +4075,7 @@
     font-size: 13px;
   }
   .schedule-day .game-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .round-statistics dl {
     gap: 6px;
