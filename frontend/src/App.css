@@ -366,6 +366,20 @@
     500 14px "DM Mono",
     monospace;
 }
+.event-round,
+.event-aggregate {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 750;
+}
+.event-round {
+  color: var(--vault-ink);
+}
+.event-aggregate {
+  margin-top: 4px;
+  color: var(--vault-success);
+}
 .mini-crest,
 .crest {
   color: white;
@@ -691,6 +705,41 @@
   color: var(--vault-muted);
   font-size: 12px;
   line-height: 1.6;
+}
+.event-standing-title {
+  margin: 0 0 10px;
+  color: var(--vault-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.event-standing-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.event-standing-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-card);
+  background: rgba(15, 19, 28, 0.72);
+}
+.event-standing-card b {
+  overflow-wrap: anywhere;
+  color: var(--vault-ink);
+  font-size: 12px;
+}
+.event-standing-card strong {
+  color: var(--vault-success);
+  font-size: 16px;
+}
+.event-standing-card span {
+  color: var(--vault-muted);
+  font-size: 11px;
 }
 .event-summary-table {
   display: grid;

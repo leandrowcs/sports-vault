@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { loadSportsData } from '../espn.mjs';
+import { loadEventSummary, loadFootballStandings, loadSportsData } from '../espn.mjs';
 
 const year = new Date().getUTCFullYear();
 function event(id, date, teamId = '205', state = 'pre') {
@@ -62,4 +62,161 @@ test('browser fallback derives Brazil and opponents from annual scoreboards', as
   const data = await loadSportsData();
   assert.equal(data.events[0].id, 'amistosos-internacionais-upcoming');
   assert.equal(data.teams.length, 2);
+});
+
+test('Brasileirão fixture receives its inferred round when both teams agree', async (t) => {
+  const fixture = (id, date, homeId, awayId) => ({
+    id,
+    date,
+    season: { type: 13907, slug: `${year}-brasileiro-serie-a` },
+    competitions: [{
+      date,
+      status: { type: { state: 'pre' } },
+      competitors: [
+        { id: homeId, homeAway: 'home', score: '0', team: { id: homeId, displayName: `Team ${homeId}` } },
+        { id: awayId, homeAway: 'away', score: '0', team: { id: awayId, displayName: `Team ${awayId}` } },
+      ],
+    }],
+  });
+  const schedule = [
+    fixture('one-a', `${year}-01-10T12:00:00Z`, 'a', 'b'),
+    fixture('one-b', `${year}-01-10T15:00:00Z`, 'c', 'd'),
+    fixture('two-a', `${year}-01-17T12:00:00Z`, 'a', 'c'),
+    fixture('two-b', `${year}-01-17T15:00:00Z`, 'b', 'd'),
+  ];
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input);
+    if (url.pathname.endsWith('/teams') || url.pathname.endsWith('/roster')) return Response.json({});
+    if (url.pathname.endsWith('/scoreboard') && url.pathname.includes('/bra.1/')) {
+      return Response.json({ events: url.searchParams.get('dates') === String(year) ? schedule : [schedule[3]] });
+    }
+    return Response.json({ events: [] });
+  });
+
+  const data = await loadSportsData();
+  const match = data.events.find((item) => item.id === 'brasileirao-a-two-b');
+  assert.equal(match.week, 2);
+  assert.equal(match.roundLabel, 'Rodada 2');
+});
+
+test('Copa do Brasil fixtures show phase, leg, and first-leg aggregate', async (t) => {
+  const fixture = (id, date, leg, home, away, homeAggregate, awayAggregate, homeGoals = '0', awayGoals = '0', state = 'pre') => ({
+    id,
+    date,
+    season: { year, type: 14066, slug: 'semifinals' },
+    competitions: [{
+      date,
+      leg: { value: leg, displayValue: leg === 1 ? '1st Leg' : '2nd Leg' },
+      series: {
+        title: 'Semifinals',
+        competitors: [
+          { id: home, aggregateScore: homeAggregate },
+          { id: away, aggregateScore: awayAggregate },
+        ],
+      },
+      status: { type: { state } },
+      competitors: [
+        { id: home, homeAway: 'home', score: homeGoals, team: { id: home, displayName: `Team ${home}` } },
+        { id: away, homeAway: 'away', score: awayGoals, team: { id: away, displayName: `Team ${away}` } },
+      ],
+    }],
+  });
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input);
+    if (url.pathname.endsWith('/teams') || url.pathname.endsWith('/roster')) return Response.json({});
+    if (url.pathname.endsWith('/scoreboard') && url.pathname.includes('/bra.copa_do_brazil/')) {
+      return Response.json({ events: [
+        fixture('cup-first', `${year}-11-01T12:00:00Z`, 1, 'home', 'away', 0, 0),
+        fixture('cup-second', `${year}-11-08T12:00:00Z`, 2, 'away', 'home', 1, 2),
+        fixture('cup-live', `${year}-11-08T15:00:00Z`, 2, 'away', 'home', 3, 2, '2', '0', 'in'),
+      ] });
+    }
+    return Response.json({ events: [] });
+  });
+
+  const data = await loadSportsData();
+  const ida = data.events.find((item) => item.id === 'copa-do-brasil-cup-first');
+  const volta = data.events.find((item) => item.id === 'copa-do-brasil-cup-second');
+  const voltaAoVivo = data.events.find((item) => item.id === 'copa-do-brasil-cup-live');
+  assert.equal(ida.roundLabel, 'Semifinal');
+  assert.equal(ida.leg, 1);
+  assert.equal(volta.roundLabel, 'Semifinal');
+  assert.equal(volta.leg, 2);
+  assert.equal(volta.aggregateHomeScore, 1);
+  assert.equal(volta.aggregateAwayScore, 2);
+  assert.equal(voltaAoVivo.aggregateHomeScore, 1);
+  assert.equal(voltaAoVivo.aggregateAwayScore, 2);
+});
+
+test('pre-match football summary does not report the scheduled score as goals', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({
+    header: {
+      competitions: [{
+        status: { type: { state: 'pre' } },
+        competitors: [
+          { id: '1', homeAway: 'home', score: '0', team: { id: '1' } },
+          { id: '2', homeAway: 'away', score: '0', team: { id: '2' } },
+        ],
+      }],
+    },
+  }));
+
+  const summary = await loadEventSummary('brasileirao-a', 'brasileirao-a-match');
+  assert.deepEqual(summary.statistics, []);
+});
+
+test('started football summary labels the fixture score as match goals', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({
+    header: {
+      competitions: [{
+        status: { type: { state: 'in' } },
+        competitors: [
+          { id: '1', homeAway: 'home', score: '2', team: { id: '1' } },
+          { id: '2', homeAway: 'away', score: '1', team: { id: '2' } },
+        ],
+      }],
+    },
+  }));
+
+  const summary = await loadEventSummary('brasileirao-a', 'brasileirao-a-match');
+  assert.deepEqual(summary.statistics[0], {
+    key: 'goals',
+    label: 'Gols na partida',
+    homeValue: '2',
+    awayValue: '1',
+  });
+});
+
+test('Brazilian league standings count completed matches and ignore future fixtures', async (t) => {
+  const kickoff = new Date(Date.now() - 60_000).toISOString();
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input);
+    assert.match(url.pathname, /\/soccer\/bra\.1\/scoreboard$/);
+    assert.equal(url.searchParams.get('limit'), '1000');
+    const fixture = (id, home, away, homeGoals, awayGoals, state = 'post', date = kickoff) => ({
+      id,
+      date,
+      competitions: [{
+        date,
+        status: { type: { state } },
+        competitors: [
+          { homeAway: 'home', score: String(homeGoals), team: { id: home, displayName: `Team ${home}` } },
+          { homeAway: 'away', score: String(awayGoals), team: { id: away, displayName: `Team ${away}` } },
+        ],
+      }],
+    });
+    return Response.json({ events: [
+      fixture('1', 'a', 'b', 2, 0),
+      fixture('2', 'b', 'c', 1, 1),
+      fixture('3', 'c', 'a', 4, 0),
+      fixture('4', 'a', 'c', 2, 0, 'pre', new Date(Date.now() + 60_000).toISOString()),
+    ] });
+  });
+
+  const standings = await loadFootballStandings('brasileirao-a');
+  assert.deepEqual(standings.map(({ teamId, points, played, position }) => ({ teamId, points, played, position })), [
+    { teamId: 'brasileirao-a-c', points: 4, played: 2, position: 1 },
+    { teamId: 'brasileirao-a-a', points: 3, played: 2, position: 2 },
+    { teamId: 'brasileirao-a-b', points: 1, played: 2, position: 3 },
+  ]);
 });

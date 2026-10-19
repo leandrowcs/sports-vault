@@ -91,6 +91,104 @@ function mapStatus(state) {
   return "scheduled";
 }
 
+const brazilianLeagueIds = new Set(["brasileirao-a", "brasileirao-b"]);
+const brazilianCupRounds = {
+  "first-round": "1ª fase",
+  "second-round": "2ª fase",
+  "third-round": "3ª fase",
+  "fourth-round": "4ª fase",
+  "fifth-round": "5ª fase",
+  "round-of-32": "16 avos de final",
+  "round-of-16": "Oitavas de final",
+  quarterfinals: "Quartas de final",
+  semifinals: "Semifinal",
+  final: "Final",
+};
+
+function roundNumber(event) {
+  const candidates = [
+    event.week?.number,
+    event.competitions?.[0]?.week?.number,
+    event.competitions?.[0]?.round?.number,
+  ];
+  const number = candidates.map(Number).find((value) => Number.isInteger(value) && value > 0);
+  return number;
+}
+
+function brazilianLeagueRounds(events) {
+  const appearances = new Map();
+  const rounds = new Map();
+  const sortedEvents = events
+    .filter((event) => Number.isFinite(Date.parse(event.date)))
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date) || String(a.id).localeCompare(String(b.id)));
+
+  for (const event of sortedEvents) {
+    const competitors = event.competitions?.[0]?.competitors ?? [];
+    const home = competitors.find((competitor) => competitor.homeAway === "home");
+    const away = competitors.find((competitor) => competitor.homeAway === "away");
+    if (!home?.id || !away?.id) continue;
+
+    const homeTeamId = String(home.id);
+    const awayTeamId = String(away.id);
+    const homeRound = (appearances.get(homeTeamId) ?? 0) + 1;
+    const awayRound = (appearances.get(awayTeamId) ?? 0) + 1;
+    const suppliedRound = roundNumber(event);
+    const inferredRound = homeRound === awayRound ? homeRound : undefined;
+    const round = suppliedRound ?? inferredRound;
+    if (round) rounds.set(String(event.id), round);
+
+    appearances.set(homeTeamId, homeRound);
+    appearances.set(awayTeamId, awayRound);
+  }
+
+  return rounds;
+}
+
+function cupRoundLabel(event, competition) {
+  const slug = event.season?.slug;
+  if (slug && brazilianCupRounds[slug]) return brazilianCupRounds[slug];
+
+  const stage = competition.altGameNote?.split(",").at(-1)?.trim().toLowerCase();
+  if (stage && brazilianCupRounds[stage.replaceAll(" ", "-")]) {
+    return brazilianCupRounds[stage.replaceAll(" ", "-")];
+  }
+  const seriesTitle = competition.series?.title?.toLowerCase();
+  return seriesTitle ? brazilianCupRounds[seriesTitle.replaceAll(" ", "-")] : undefined;
+}
+
+function cupLeg(competition) {
+  const value = Number(competition.leg?.value);
+  if (value === 1 || value === 2) return value;
+
+  const detail = [
+    competition.leg?.displayValue,
+    competition.notes?.headline,
+    competition.notes?.text,
+  ].filter(Boolean).join(" ").toLowerCase();
+  if (/\b(?:1st|first)\s+leg\b/.test(detail)) return 1;
+  if (/\b(?:2nd|second)\s+leg\b/.test(detail)) return 2;
+  return undefined;
+}
+
+function cupAggregateScores(competition, home, away, leg, status) {
+  if (leg !== 2) return {};
+  const seriesCompetitors = competition.series?.competitors ?? [];
+  const aggregateFor = (competitor) => {
+    const teamId = String(competitor.id ?? competitor.team?.id ?? "");
+    const seriesTeam = seriesCompetitors.find((item) => String(item.id ?? item.team?.id ?? "") === teamId);
+    const score = Number(seriesTeam?.aggregateScore);
+    if (!Number.isFinite(score)) return undefined;
+    if (status === "scheduled") return score;
+    const currentScore = Number(competitor.score);
+    return Number.isFinite(currentScore) ? Math.max(0, score - currentScore) : score;
+  };
+  const aggregateHomeScore = aggregateFor(home);
+  const aggregateAwayScore = aggregateFor(away);
+  return aggregateHomeScore === undefined || aggregateAwayScore === undefined
+    ? {}
+    : { aggregateHomeScore, aggregateAwayScore };
+}
+
 function getStat(categories, categoryName, statName) {
   const category = categories?.find((item) => item.name === categoryName);
   const stat = category?.stats?.find((item) => item.name === statName);
@@ -187,7 +285,7 @@ async function loadFootballPlayers(def, teams) {
   }));
 }
 
-function normalizeEvent(event, leagueId, scoreboard) {
+function normalizeEvent(event, leagueId, scoreboard, inferredRound) {
   const competition = event.competitions?.[0];
   const competitors = competition?.competitors;
   if (!competition || !competitors || competitors.length < 2) return null;
@@ -197,6 +295,11 @@ function normalizeEvent(event, leagueId, scoreboard) {
   if (!home?.team?.id || !away?.team?.id) return null;
 
   const status = mapStatus(competition.status?.type?.state);
+  const week = roundNumber(event) ?? inferredRound;
+  const leg = leagueId === "copa-do-brasil" ? cupLeg(competition) : undefined;
+  const roundLabel = brazilianLeagueIds.has(leagueId) && week
+    ? `Rodada ${week}`
+    : leagueId === "copa-do-brasil" ? cupRoundLabel(event, competition) : undefined;
 
   return {
     id: `${leagueId}-${event.id}`,
@@ -206,8 +309,11 @@ function normalizeEvent(event, leagueId, scoreboard) {
     startsAt: event.date,
     status,
     venue: competition.venue?.fullName || "A definir",
-    week: event.week?.number ?? scoreboard?.week?.number,
+    week: week ?? scoreboard?.week?.number,
     seasonPhase: event.season?.type === 1 ? "Pré-temporada" : event.season?.type === 3 ? "Playoffs" : undefined,
+    ...(roundLabel ? { roundLabel } : {}),
+    ...(leg ? { leg } : {}),
+    ...(leg === 2 ? cupAggregateScores(competition, home, away, leg, status) : {}),
     ...(status !== "scheduled" ? { homeScore: Number(home.score ?? 0), awayScore: Number(away.score ?? 0) } : {}),
   };
 }
@@ -269,9 +375,10 @@ function findStatValue(entries, aliases) {
 
 function buildEventSummaryStats(def, competition, homeStats, awayStats) {
   const scoreFallback = (side) => String(side === "home" ? Number(competition?.competitors?.find((item) => item.homeAway === "home")?.score ?? 0) : Number(competition?.competitors?.find((item) => item.homeAway === "away")?.score ?? 0));
+  const matchStarted = ["in", "post"].includes(competition?.status?.type?.state);
   const configs = {
     football: [
-      { key: "goals", label: "Gols", aliases: ["goals", "totalGoals", "score"], fallback: scoreFallback },
+      { key: "goals", label: "Gols na partida", aliases: ["goals", "totalGoals", "score"], fallback: matchStarted ? scoreFallback : undefined },
       { key: "shots", label: "Chutes", aliases: ["shots", "totalShots", "shotsTotal"] },
       { key: "shots-on-target", label: "Chutes no gol", aliases: ["shotsOnTarget", "shotsOnGoal", "ontargetscoringattempts"] },
       { key: "possession", label: "Posse de bola", aliases: ["possessionPct", "possessionPercentage", "possession"] },
@@ -434,6 +541,87 @@ export async function loadEventSummary(leagueId, eventId) {
   };
 }
 
+export async function loadFootballStandings(leagueId) {
+  const def = leagueDefs.find((league) => league.id === leagueId);
+  if (!def || !["brasileirao-a", "brasileirao-b"].includes(leagueId)) {
+    throw new Error(`Classificação indisponível para a competição: ${leagueId}`);
+  }
+
+  const season = getLeagueSeason(def);
+  const payload = await espnFetch(`/${def.espnSport}/${def.espnLeague}/scoreboard?dates=${season}&limit=1000`);
+  const table = new Map();
+
+  for (const event of payload.events ?? []) {
+    const competitors = event.competitions?.[0]?.competitors ?? [];
+    if (competitors.length !== 2) continue;
+    const competition = event.competitions[0];
+
+    for (const competitor of competitors) {
+      const team = competitor.team;
+      if (!team?.id) continue;
+      const teamId = `${leagueId}-${team.id}`;
+      if (!table.has(teamId)) {
+        table.set(teamId, {
+          teamId,
+          teamName: team.displayName || team.name || team.abbreviation || "Time",
+          points: 0,
+          played: 0,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+        });
+      }
+    }
+
+    const startsAt = Date.parse(competition.date ?? event.date);
+    const status = competition.status?.type?.state ?? event.status?.type?.state;
+    const isComplete = status === "post" && Number.isFinite(startsAt) && startsAt <= Date.now();
+    if (!isComplete) continue;
+
+    const home = competitors.find((competitor) => competitor.homeAway === "home") ?? competitors[0];
+    const away = competitors.find((competitor) => competitor.homeAway === "away") ?? competitors[1];
+    if (!home.team?.id || !away.team?.id) continue;
+    const homeGoals = Number(home.score);
+    const awayGoals = Number(away.score);
+    if (!Number.isFinite(homeGoals) || !Number.isFinite(awayGoals)) continue;
+
+    const homeRow = table.get(`${leagueId}-${home.team.id}`);
+    const awayRow = table.get(`${leagueId}-${away.team.id}`);
+    if (!homeRow || !awayRow) continue;
+    homeRow.played += 1;
+    awayRow.played += 1;
+    homeRow.goalsFor += homeGoals;
+    homeRow.goalsAgainst += awayGoals;
+    awayRow.goalsFor += awayGoals;
+    awayRow.goalsAgainst += homeGoals;
+
+    if (homeGoals > awayGoals) {
+      homeRow.wins += 1;
+      homeRow.points += 3;
+      awayRow.losses += 1;
+    } else if (awayGoals > homeGoals) {
+      awayRow.wins += 1;
+      awayRow.points += 3;
+      homeRow.losses += 1;
+    } else {
+      homeRow.draws += 1;
+      awayRow.draws += 1;
+      homeRow.points += 1;
+      awayRow.points += 1;
+    }
+  }
+
+  return [...table.values()]
+    .sort((a, b) => b.points - a.points
+      || b.wins - a.wins
+      || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)
+      || b.goalsFor - a.goalsFor
+      || a.teamName.localeCompare(b.teamName))
+    .map(({ teamId, teamName, points, played }, index) => ({ teamId, teamName, points, played, position: index + 1 }));
+}
+
 async function loadScoreboard(def) {
   const path = `/${def.espnSport}/${def.espnLeague}/scoreboard`;
   if (def.focusGroup !== "selecao") return espnFetch(path);
@@ -463,12 +651,21 @@ async function loadScoreboard(def) {
 }
 
 async function loadLeagueData(def) {
+  const seasonRoundsPromise = brazilianLeagueIds.has(def.id)
+    ? espnFetch(`/${def.espnSport}/${def.espnLeague}/scoreboard?dates=${getLeagueSeason(def)}&limit=1000`)
+      .then((payload) => brazilianLeagueRounds(payload.events ?? []))
+      .catch((error) => {
+        console.error(`sports-vault: failed to load ${def.id} fixture rounds`, error);
+        return new Map();
+      })
+    : Promise.resolve(new Map());
   const [teamsResult, scoreboardResult] = await Promise.allSettled([
     // The catalog does not expose CORS; browser fallback derives teams from scoreboards.
     typeof window === "undefined"
       ? espnFetch(`/${def.espnSport}/${def.espnLeague}/teams`)
       : Promise.resolve(null),
     loadScoreboard(def),
+    seasonRoundsPromise,
   ]);
 
   if (teamsResult.status === "rejected" && scoreboardResult.status === "rejected") {
@@ -476,6 +673,7 @@ async function loadLeagueData(def) {
   }
   const teamsPayload = teamsResult.status === "fulfilled" ? teamsResult.value : null;
   const scoreboardPayload = scoreboardResult.status === "fulfilled" ? scoreboardResult.value : null;
+  const seasonRounds = await seasonRoundsPromise;
   const rawEvents = scoreboardPayload?.events ?? [];
   const teamGroups = teamsPayload?.sports?.[0]?.leagues?.[0]?.teams ?? [];
   const teamsById = new Map();
@@ -490,7 +688,7 @@ async function loadLeagueData(def) {
   const teams = [...teamsById.values()];
 
   const events = rawEvents
-    .map((event) => normalizeEvent(event, def.id, scoreboardPayload))
+    .map((event) => normalizeEvent(event, def.id, scoreboardPayload, seasonRounds.get(String(event.id))))
     .filter((event) => event && teamsById.has(event.homeTeamId) && teamsById.has(event.awayTeamId));
 
   const players = def.espnSport === "soccer" && def.supportsPlayers !== false

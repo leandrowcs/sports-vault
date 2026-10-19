@@ -10,6 +10,18 @@ module.exports = async function handler(request, response) {
   }
 
   try {
+    if (request.query?.type === 'football-standings') {
+      const leagueId = typeof request.query.leagueId === 'string' ? request.query.leagueId : '';
+      if (!['brasileirao-a', 'brasileirao-b'].includes(leagueId)) {
+        response.status(400).json({ error: 'Competição inválida para classificação.' });
+        return;
+      }
+      const { loadFootballStandings } = await import('../shared/espn.mjs');
+      const standings = await loadFootballStandings(leagueId);
+      response.setHeader('Cache-Control', 'no-store');
+      response.status(200).json(standings);
+      return;
+    }
     if (typeof request.query?.type === 'string' && request.query.type.startsWith('nfl-')) {
       const { nflRequest } = await import('../shared/nfl.mjs');
       try {

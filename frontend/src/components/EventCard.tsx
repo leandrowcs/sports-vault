@@ -3,7 +3,7 @@ import { SportIcon } from "./SportIcon";
 import { TeamCrest } from "./TeamCrest";
 import { getFocusGroup } from "../helpers/focusGroups";
 import type { League, SportEvent, Team } from "../types/sports";
-import { formatEventCardDate } from "../helpers/eventDates";
+import { eventAggregateDescription, eventRoundDescription, formatEventCardDate } from "../helpers/eventDates";
 export function EventCard({
   event,
   home,
@@ -18,6 +18,8 @@ export function EventCard({
   onSelect?: (event: SportEvent) => void;
 }) {
   const date = formatEventCardDate(event.startsAt);
+  const roundDescription = eventRoundDescription(event);
+  const aggregateDescription = eventAggregateDescription(event);
   return (
     <article data-sport={getFocusGroup(competition)} className={onSelect ? "event-card selectable" : "event-card"} onClick={() => onSelect?.(event)} onKeyDown={(keyEvent) => { if (onSelect && (keyEvent.key === "Enter" || keyEvent.key === " ")) { keyEvent.preventDefault(); onSelect(event); } }} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined}>
       <div className="event-meta">
@@ -48,6 +50,8 @@ export function EventCard({
           <b>{away.name}</b>
         </div>
       </div>
+      {roundDescription && <p className="event-round">{roundDescription}</p>}
+      {aggregateDescription && <p className="event-aggregate">{aggregateDescription}</p>}
       {event.venue && event.venue !== "A definir" && <p className="venue">
         <MapPin size={14} aria-hidden="true" />
         {event.venue}

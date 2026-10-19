@@ -39,6 +39,14 @@ export function formatEventDetailStatus(event: SportEvent) {
   if (event.status === "live") return `${score} · Ao vivo · ${dateLabel}`;
   return dateLabel;
 }
+export function eventRoundDescription(event: SportEvent) {
+  const leg = event.leg === 1 ? "Jogo de ida" : event.leg === 2 ? "Jogo de volta" : null;
+  return [event.roundLabel, leg].filter(Boolean).join(" · ");
+}
+export function eventAggregateDescription(event: SportEvent) {
+  if (event.leg !== 2 || event.aggregateHomeScore === undefined || event.aggregateAwayScore === undefined) return null;
+  return `Agregado da ida: ${event.aggregateHomeScore} - ${event.aggregateAwayScore}`;
+}
 export function formatShortKickoff(startsAt: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     hour: "2-digit",

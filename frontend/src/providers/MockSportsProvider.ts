@@ -1,4 +1,4 @@
-import type { League, Player, SportEvent, SportEventSummary, Team } from '../types/sports'
+import type { FootballStanding, League, Player, SportEvent, SportEventSummary, Team } from '../types/sports'
 import type { SportsProvider } from './SportsProvider'
 const leagues: League[] = [
   { id: 'brasileirao-a', name: 'Brasileirão Série A', country: 'Brasil', sport: 'football', season: '2026', color: '#16a34a', focusGroup: 'futebol' }, { id: 'copa-do-brasil', name: 'Copa do Brasil', country: 'Brasil', sport: 'football', season: '2026', color: '#facc15', focusGroup: 'futebol' }, { id: 'amistosos-internacionais', name: 'International Friendly', country: 'Internacional', sport: 'football', season: '2026', color: '#38bdf8', focusGroup: 'selecao' }, { id: 'nba', name: 'NBA', country: 'Estados Unidos', sport: 'basketball', season: '2026/27', color: '#ea580c', focusGroup: 'nba' }, { id: 'nfl', name: 'NFL', country: 'Estados Unidos', sport: 'american_football', season: '2026/27', color: '#7c2d12', focusGroup: 'nfl' },
@@ -27,7 +27,7 @@ const eventSummaries: Record<string, SportEventSummary> = {
     shortStatus: 'Ao vivo',
     note: 'Flamengo pressiona mais, mas o Palmeiras responde em transições rápidas.',
     statistics: [
-      { key: 'goals', label: 'Gols', homeValue: '1', awayValue: '1' },
+      { key: 'goals', label: 'Gols na partida', homeValue: '1', awayValue: '1' },
       { key: 'shots', label: 'Chutes', homeValue: '11', awayValue: '8' },
       { key: 'shots-on-target', label: 'Chutes no gol', homeValue: '5', awayValue: '3' },
       { key: 'possession', label: 'Posse de bola', homeValue: '61%', awayValue: '39%' },
@@ -77,10 +77,18 @@ const eventSummaries: Record<string, SportEventSummary> = {
   },
 }
 
+const leagueStandings: Record<string, FootballStanding[]> = {
+  'brasileirao-a': [
+    { teamId: 'flamengo', teamName: 'Flamengo', position: 1, points: 48, played: 22 },
+    { teamId: 'palmeiras', teamName: 'Palmeiras', position: 2, points: 45, played: 22 },
+  ],
+}
+
 export const mockSportsProvider: SportsProvider = {
   async getLeagues() { return leagues },
   async getTeams() { return teams },
   async getEvents() { return events },
   async getPlayers() { return players },
   async getEventSummary(event) { return eventSummaries[event.id] ?? null },
+  async getLeagueStandings(leagueId) { return leagueStandings[leagueId] ?? [] },
 }

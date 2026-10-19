@@ -1,4 +1,4 @@
-import type { League, Player, SportEvent, SportEventSummary, Team } from "../types/sports";
+import type { FootballStanding, League, Player, SportEvent, SportEventSummary, Team } from "../types/sports";
 import type { SportsProvider } from "./SportsProvider";
 
 interface SportsApiPayload {
@@ -9,6 +9,15 @@ interface SportsApiPayload {
 }
 
 const sportsApiBaseUrl = import.meta.env.VITE_SPORTS_API_BASE_URL || "/api/sports";
+
+function isFootballStanding(value: unknown): value is FootballStanding {
+  return typeof value === "object" && value !== null
+    && "teamId" in value && typeof value.teamId === "string"
+    && "teamName" in value && typeof value.teamName === "string"
+    && "position" in value && typeof value.position === "number" && Number.isFinite(value.position)
+    && "points" in value && typeof value.points === "number" && Number.isFinite(value.points)
+    && "played" in value && typeof value.played === "number" && Number.isFinite(value.played);
+}
 
 async function loadSportsData(): Promise<Required<SportsApiPayload>> {
   try {
@@ -34,6 +43,7 @@ async function loadSportsData(): Promise<Required<SportsApiPayload>> {
 
 let sportsDataPromise: Promise<Required<SportsApiPayload>> | null = null;
 const summaryCache = new Map<string, Promise<SportEventSummary | null>>();
+const standingsCache = new Map<string, Promise<FootballStanding[]>>();
 
 function getSportsData() {
   sportsDataPromise ??= loadSportsData().catch((error: unknown) => {
@@ -86,5 +96,36 @@ export const apiSportsProvider: SportsProvider = {
     }
 
     return summaryCache.get(cacheKey)!;
+  },
+  async getLeagueStandings(leagueId) {
+    if (!standingsCache.has(leagueId)) {
+      standingsCache.set(
+        leagueId,
+        fetch(`${sportsApiBaseUrl}?type=football-standings&leagueId=${encodeURIComponent(leagueId)}`, {
+          signal: AbortSignal.timeout(20000),
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              throw new Error("Não foi possível carregar a classificação da competição.");
+            }
+
+            const payload: unknown = await response.json();
+            if (!Array.isArray(payload) || !payload.every(isFootballStanding)) {
+              throw new Error("A API esportiva retornou uma classificação inválida.");
+            }
+            return payload;
+          })
+          .catch(async () => {
+            const espn = await import("../../../shared/espn.mjs");
+            return espn.loadFootballStandings(leagueId);
+          })
+          .catch((error: unknown) => {
+            standingsCache.delete(leagueId);
+            throw error;
+          }),
+      );
+    }
+
+    return standingsCache.get(leagueId)!;
   },
 };
