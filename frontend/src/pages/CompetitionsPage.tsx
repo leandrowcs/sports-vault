@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Trophy } from "lucide-react";
 import { FOCUS_GROUPS, isBrazilEvent, leaguesForFocusGroup } from "../helpers/focusGroups";
 import { teamMetrics } from "../helpers/sportStatistics";
@@ -22,10 +22,18 @@ export function CompetitionsPage({
   getLeague: (id: string) => League;
   onSelectEvent: (event: SportEvent) => void;
 }) {
-  const groupLeagues = leaguesForFocusGroup(leagues, focusGroup);
+  const groupLeagues = leaguesForFocusGroup(leagues, focusGroup)
+    .filter((league) => league.id !== "brasileirao-c" && league.id !== "brasileirao-d");
   const [selection, setSelection] = useState<{ group: FocusGroupId; leagueId: string | null }>({ group: focusGroup, leagueId: null });
-  const activeLeagueId = selection.group === focusGroup ? selection.leagueId : null;
+  const activeLeagueId = selection.group === focusGroup && groupLeagues.some((league) => league.id === selection.leagueId)
+    ? selection.leagueId
+    : null;
   const setActiveLeagueId = (leagueId: string | null) => setSelection({ group: focusGroup, leagueId });
+  const tabId = useId();
+  const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
+  const tabs = [{ leagueId: null, label: "Todas" }, ...groupLeagues.map((league) => ({ leagueId: league.id, label: league.name }))];
+  const selectedTabIndex = Math.max(0, tabs.findIndex((tab) => tab.leagueId === activeLeagueId));
+  const hasTabs = groupLeagues.length > 1;
   const selectedLeagues = activeLeagueId ? groupLeagues.filter((league) => league.id === activeLeagueId) : groupLeagues;
   const leagueIds = new Set(selectedLeagues.map((league) => league.id));
 
@@ -60,15 +68,43 @@ export function CompetitionsPage({
 
   return (
     <section aria-label={groupLabel} className="competitions-page" data-sport={focusGroup}>
-      {groupLeagues.length > 1 && (
-        <nav className="competition-filters" aria-label="Filtrar por competição">
-          <button aria-pressed={activeLeagueId === null} onClick={() => setActiveLeagueId(null)}>Todas</button>
-          {groupLeagues.map((league) => (
-            <button key={league.id} aria-pressed={activeLeagueId === league.id} onClick={() => setActiveLeagueId(league.id)}>{league.name}</button>
+      {hasTabs && (
+        <nav className="competition-tabs" role="tablist" aria-label="Filtrar por competição">
+          {tabs.map((tab, index) => (
+            <button
+              key={tab.leagueId ?? "all"}
+              ref={(element) => { tabButtons.current[index] = element; }}
+              id={`${tabId}-tab-${index}`}
+              type="button"
+              role="tab"
+              aria-controls={`${tabId}-panel`}
+              aria-selected={selectedTabIndex === index}
+              tabIndex={selectedTabIndex === index ? 0 : -1}
+              onClick={() => setActiveLeagueId(tab.leagueId)}
+              onKeyDown={(event) => {
+                if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                event.preventDefault();
+                const next = event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? tabs.length - 1
+                    : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+                setActiveLeagueId(tabs[next].leagueId);
+                tabButtons.current[next]?.focus();
+              }}
+            >
+              {tab.label}
+            </button>
           ))}
         </nav>
       )}
 
+      <div
+        id={hasTabs ? `${tabId}-panel` : undefined}
+        role={hasTabs ? "tabpanel" : undefined}
+        aria-labelledby={hasTabs ? `${tabId}-tab-${selectedTabIndex}` : undefined}
+        className="competitions-tab-panel"
+      >
       {standings.length > 0 && (
         <section className="team-module">
           <header>
@@ -121,6 +157,7 @@ export function CompetitionsPage({
           </div>
         )}
       </section>
+      </div>
     </section>
   );
 }
