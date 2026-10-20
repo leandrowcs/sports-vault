@@ -619,7 +619,33 @@ export async function loadFootballStandings(leagueId) {
       || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)
       || b.goalsFor - a.goalsFor
       || a.teamName.localeCompare(b.teamName))
-    .map(({ teamId, teamName, points, played }, index) => ({ teamId, teamName, points, played, position: index + 1 }));
+    .map(({ teamId, teamName, points, played, wins, draws, losses, goalsFor, goalsAgainst }, index) => ({
+      teamId, teamName, points, played, wins, draws, losses, goalsFor, goalsAgainst, position: index + 1,
+    }));
+}
+
+export async function loadFootballSeasonSchedule(leagueId) {
+  if (leagueId !== "copa-do-brasil") {
+    throw new Error(`Calendário indisponível para a competição: ${leagueId}`);
+  }
+  const def = getLeagueDefinition(leagueId);
+  const season = getLeagueSeason(def);
+  const payload = await espnFetch(`/${def.espnSport}/${def.espnLeague}/scoreboard?dates=${season}&limit=1000`);
+  const teamsById = new Map();
+  const events = (payload.events ?? [])
+    .filter((event) => Number.isFinite(Date.parse(event.date)))
+    .map((event) => {
+      const competitors = event.competitions?.[0]?.competitors ?? [];
+      competitors.forEach((competitor) => {
+        const team = competitor.team ? normalizeTeam(competitor.team, leagueId) : null;
+        if (team) teamsById.set(team.id, team);
+      });
+      return normalizeEvent(event, leagueId, payload);
+    })
+    .filter((event) => event && teamsById.has(event.homeTeamId) && teamsById.has(event.awayTeamId))
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+
+  return { events, teams: [...teamsById.values()] };
 }
 
 async function loadScoreboard(def) {

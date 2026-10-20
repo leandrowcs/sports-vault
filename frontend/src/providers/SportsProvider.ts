@@ -1,4 +1,4 @@
-import type { FootballStanding, League, Player, SportEvent, SportEventSummary, Team } from '../types/sports'
+import type { FootballSeasonSchedule, FootballStanding, League, Player, SportEvent, SportEventSummary, Team } from '../types/sports'
 
 export interface SportsProvider {
   getLeagues(): Promise<League[]>
@@ -7,4 +7,5 @@ export interface SportsProvider {
   getPlayers(): Promise<Player[]>
   getEventSummary(event: SportEvent): Promise<SportEventSummary | null>
   getLeagueStandings(leagueId: string): Promise<FootballStanding[]>
+  getFootballSeasonSchedule(leagueId: string): Promise<FootballSeasonSchedule>
 }

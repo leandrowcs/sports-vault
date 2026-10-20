@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { loadEventSummary, loadFootballStandings, loadSportsData } from '../espn.mjs';
+import { loadEventSummary, loadFootballSeasonSchedule, loadFootballStandings, loadSportsData } from '../espn.mjs';
 
 const year = new Date().getUTCFullYear();
 function event(id, date, teamId = '205', state = 'pre') {
@@ -148,6 +148,51 @@ test('Copa do Brasil fixtures show phase, leg, and first-leg aggregate', async (
   assert.equal(voltaAoVivo.aggregateAwayScore, 2);
 });
 
+test('Copa do Brasil season schedule includes all rounds and their teams', async (t) => {
+  const requests = [];
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input);
+    requests.push(url);
+    return Response.json({ events: [
+      {
+        id: 'final',
+        date: `${year}-12-01T20:00:00Z`,
+        season: { slug: 'final' },
+        competitions: [{
+          status: { type: { state: 'pre' } },
+          competitors: [
+            { homeAway: 'home', score: '0', team: { id: 'home', displayName: 'Mandante' } },
+            { homeAway: 'away', score: '0', team: { id: 'away', displayName: 'Visitante' } },
+          ],
+        }],
+      },
+      {
+        id: 'round-of-16',
+        date: `${year}-08-01T20:00:00Z`,
+        season: { slug: 'round-of-16' },
+        competitions: [{
+          status: { type: { state: 'post' } },
+          competitors: [
+            { homeAway: 'home', score: '2', team: { id: 'away', displayName: 'Visitante' } },
+            { homeAway: 'away', score: '1', team: { id: 'home', displayName: 'Mandante' } },
+          ],
+        }],
+      },
+    ] });
+  });
+
+  const schedule = await loadFootballSeasonSchedule('copa-do-brasil');
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].searchParams.get('dates'), String(year));
+  assert.equal(requests[0].searchParams.get('limit'), '1000');
+  assert.deepEqual(schedule.events.map(({ roundLabel, status }) => ({ roundLabel, status })), [
+    { roundLabel: 'Oitavas de final', status: 'finished' },
+    { roundLabel: 'Final', status: 'scheduled' },
+  ]);
+  assert.deepEqual(schedule.teams.map(({ name }) => name).sort(), ['Mandante', 'Visitante']);
+  await assert.rejects(loadFootballSeasonSchedule('brasileirao-a'), /Calendário indisponível/);
+});
+
 test('pre-match football summary does not report the scheduled score as goals', async (t) => {
   t.mock.method(globalThis, 'fetch', async () => Response.json({
     header: {
@@ -214,9 +259,11 @@ test('Brazilian league standings count completed matches and ignore future fixtu
   });
 
   const standings = await loadFootballStandings('brasileirao-a');
-  assert.deepEqual(standings.map(({ teamId, points, played, position }) => ({ teamId, points, played, position })), [
-    { teamId: 'brasileirao-a-c', points: 4, played: 2, position: 1 },
-    { teamId: 'brasileirao-a-a', points: 3, played: 2, position: 2 },
-    { teamId: 'brasileirao-a-b', points: 1, played: 2, position: 3 },
+  assert.deepEqual(standings.map(({ teamId, points, played, position, wins, draws, losses, goalsFor, goalsAgainst }) => ({
+    teamId, points, played, position, wins, draws, losses, goalsFor, goalsAgainst,
+  })), [
+    { teamId: 'brasileirao-a-c', points: 4, played: 2, position: 1, wins: 1, draws: 1, losses: 0, goalsFor: 5, goalsAgainst: 1 },
+    { teamId: 'brasileirao-a-a', points: 3, played: 2, position: 2, wins: 1, draws: 0, losses: 1, goalsFor: 2, goalsAgainst: 4 },
+    { teamId: 'brasileirao-a-b', points: 1, played: 2, position: 3, wins: 0, draws: 1, losses: 1, goalsFor: 1, goalsAgainst: 3 },
   ]);
 });

@@ -3448,6 +3448,91 @@
   outline: 2px solid var(--vault-primary);
   outline-offset: -2px;
 }
+.football-standings-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-card);
+}
+.football-standings {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--vault-surface);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.football-standings th,
+.football-standings td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--vault-border);
+  text-align: center;
+}
+.football-standings thead {
+  color: var(--vault-muted);
+  background: var(--vault-surface-raised);
+}
+.football-standings tbody th {
+  text-align: left;
+}
+.football-standings tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.football-round-pagination {
+  display: grid;
+  grid-template-columns: 1fr minmax(100px, 1fr) 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+.football-round-pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-control);
+  background: var(--vault-surface);
+  color: var(--vault-ink);
+}
+.football-round-pagination button:last-child {
+  justify-self: end;
+}
+.football-round-pagination button:disabled {
+  opacity: 0.45;
+}
+.football-round-pagination > div {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.football-round-pagination small {
+  color: var(--vault-muted);
+  font-size: 11px;
+}
+.competition-query-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-control);
+  color: var(--vault-ink);
+}
+.competition-query-error p {
+  margin: 0;
+}
+.competition-query-error button {
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-control);
+  background: var(--vault-surface-raised);
+  color: var(--vault-ink);
+}
 .competition-filters button span {
   font-size: 10px;
   opacity: 0.8;

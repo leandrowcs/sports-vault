@@ -5,7 +5,8 @@ export type View = 'home' | FocusGroupId | 'favorites'
 export interface League { id: string; name: string; country: string; sport: SportCode; season: string; color: string; focusGroup?: FocusGroupId }
 export interface Team { id: string; name: string; shortName: string; leagueId: string; city: string; color: string; logoUrl?: string; espnTeamId?: string }
 export interface SportEvent { id: string; leagueId: string; homeTeamId: string; awayTeamId: string; startsAt: string; status: GameStatus; venue: string; homeScore?: number; awayScore?: number; week?: number; seasonPhase?: string; roundLabel?: string; leg?: 1 | 2; aggregateHomeScore?: number; aggregateAwayScore?: number }
-export interface FootballStanding { teamId: string; teamName: string; position: number; points: number; played: number }
+export interface FootballStanding { teamId: string; teamName: string; position: number; points: number; played: number; wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number }
+export interface FootballSeasonSchedule { events: SportEvent[]; teams: Team[] }
 export interface EventSummaryStat { key: string; label: string; homeValue: string; awayValue: string }
 export interface EventSummaryLeader { key: string; label: string; homeValue: string; awayValue: string }
 export interface EventGoalScorer { teamId: string; player: string; minute?: string }

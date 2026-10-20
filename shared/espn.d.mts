@@ -10,3 +10,4 @@ export interface SportsData {
 export function loadSportsData(): Promise<SportsData>;
 export function loadEventSummary(leagueId: string, eventId: string): Promise<SportEventSummary | null>;
 export function loadFootballStandings(leagueId: string): Promise<import("../frontend/src/types/sports").FootballStanding[]>;
+export function loadFootballSeasonSchedule(leagueId: string): Promise<import("../frontend/src/types/sports").FootballSeasonSchedule>;

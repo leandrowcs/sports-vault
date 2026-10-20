@@ -49,6 +49,7 @@ function App() {
   const [playerPage, setPlayerPage] = useState<Player | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<SportEvent | null>(null);
+  const [selectedEventTeams, setSelectedEventTeams] = useState<Team[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [headToHead, setHeadToHead] = useState<{ teamAId: string; teamBId: string } | null>(null);
   const [vaultError, setVaultError] = useState<string | null>(null);
@@ -179,7 +180,7 @@ function App() {
       />
     );
   }
-  const team = (id: string) => data.teams.find((item) => item.id === id)!;
+  const team = (id: string) => data.teams.find((item) => item.id === id) ?? selectedEventTeams.find((item) => item.id === id)!;
   const league = (id: string) => data.leagues.find((item) => item.id === id)!;
   const favorites = data.teams.filter((item) =>
     vault.teamIds.includes(item.id),
@@ -321,7 +322,7 @@ function App() {
             <VaultPage favorites={favorites} leagues={data.leagues} onToggle={toggleTeam} onSelect={setTeamPage} onSearch={() => setShowSearch(true)} />
           )
         ) : (
-          <CompetitionsPage focusGroup={view} events={data.events} leagues={data.leagues} teams={data.teams} getTeam={team} getLeague={league} onSelectEvent={setSelectedEvent} />
+          <CompetitionsPage focusGroup={view} events={data.events} leagues={data.leagues} teams={data.teams} getTeam={team} getLeague={league} onSelectEvent={(event, eventTeams) => { setSelectedEventTeams(eventTeams ?? []); setSelectedEvent(event); }} />
         )}
       </main>
       <AppBottomNav active={view} className="mobile-nav" onNavigate={navigateTo} />
@@ -335,7 +336,7 @@ function App() {
           team={selectedTeam}
           event={selectedEvent}
           players={data.players}
-          teams={data.teams}
+          teams={[...new Map([...data.teams, ...selectedEventTeams].map((item) => [item.id, item])).values()]}
           getTeam={team}
           getLeague={league}
           onSelectPlayer={(player) => {

@@ -22,6 +22,18 @@ module.exports = async function handler(request, response) {
       response.status(200).json(standings);
       return;
     }
+    if (request.query?.type === 'football-rounds') {
+      const leagueId = typeof request.query.leagueId === 'string' ? request.query.leagueId : '';
+      if (leagueId !== 'copa-do-brasil') {
+        response.status(400).json({ error: 'Competição inválida para consulta de rodadas.' });
+        return;
+      }
+      const { loadFootballSeasonSchedule } = await import('../shared/espn.mjs');
+      const schedule = await loadFootballSeasonSchedule(leagueId);
+      response.setHeader('Cache-Control', 'no-store');
+      response.status(200).json(schedule);
+      return;
+    }
     if (typeof request.query?.type === 'string' && request.query.type.startsWith('nfl-')) {
       const { nflRequest } = await import('../shared/nfl.mjs');
       try {
