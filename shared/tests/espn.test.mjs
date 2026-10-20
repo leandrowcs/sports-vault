@@ -190,7 +190,47 @@ test('Copa do Brasil season schedule includes all rounds and their teams', async
     { roundLabel: 'Final', status: 'scheduled' },
   ]);
   assert.deepEqual(schedule.teams.map(({ name }) => name).sort(), ['Mandante', 'Visitante']);
-  await assert.rejects(loadFootballSeasonSchedule('brasileirao-a'), /Calendário indisponível/);
+  await assert.rejects(loadFootballSeasonSchedule('invalid-league'), /Calendário indisponível/);
+});
+
+test('Brasileirão season schedule includes all fixtures grouped into inferred rounds', async (t) => {
+  const requests = [];
+  const fixture = (id, date, home, away, state = 'pre') => ({
+    id,
+    date,
+    season: { slug: `${year}-brasileiro-serie-a` },
+    competitions: [{
+      date,
+      status: { type: { state } },
+      competitors: [
+        { id: home, homeAway: 'home', score: state === 'post' ? '2' : '0', team: { id: home, displayName: `Team ${home}` } },
+        { id: away, homeAway: 'away', score: state === 'post' ? '1' : '0', team: { id: away, displayName: `Team ${away}` } },
+      ],
+    }],
+  });
+  const fixtures = [
+    fixture('r1-a', `${year}-01-10T12:00:00Z`, 'a', 'b'),
+    fixture('r1-b', `${year}-01-10T15:00:00Z`, 'c', 'd'),
+    fixture('r2-a', `${year}-01-17T12:00:00Z`, 'a', 'c', 'post'),
+    fixture('r2-b', `${year}-01-17T15:00:00Z`, 'b', 'd', 'post'),
+  ];
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input);
+    requests.push(url);
+    assert.ok(url.pathname.includes('/bra.1/scoreboard'));
+    return Response.json({ events: fixtures });
+  });
+
+  const schedule = await loadFootballSeasonSchedule('brasileirao-a');
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].searchParams.get('dates'), String(year));
+  assert.deepEqual(schedule.events.map(({ week, roundLabel }) => ({ week, roundLabel })), [
+    { week: 1, roundLabel: 'Rodada 1' },
+    { week: 1, roundLabel: 'Rodada 1' },
+    { week: 2, roundLabel: 'Rodada 2' },
+    { week: 2, roundLabel: 'Rodada 2' },
+  ]);
+  assert.equal(schedule.teams.length, 4);
 });
 
 test('pre-match football summary does not report the scheduled score as goals', async (t) => {

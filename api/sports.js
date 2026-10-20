@@ -24,7 +24,7 @@ module.exports = async function handler(request, response) {
     }
     if (request.query?.type === 'football-rounds') {
       const leagueId = typeof request.query.leagueId === 'string' ? request.query.leagueId : '';
-      if (leagueId !== 'copa-do-brasil') {
+      if (!['brasileirao-a', 'brasileirao-b', 'copa-do-brasil'].includes(leagueId)) {
         response.status(400).json({ error: 'Competição inválida para consulta de rodadas.' });
         return;
       }

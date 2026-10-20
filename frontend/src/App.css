@@ -3477,6 +3477,29 @@
 .football-standings tbody tr:last-child > * {
   border-bottom: 0;
 }
+.competition-standings > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  cursor: pointer;
+  list-style: none;
+}
+.competition-standings > summary::-webkit-details-marker {
+  display: none;
+}
+.competition-standings > summary h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.competition-standings > summary svg {
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+  transition: transform 150ms ease;
+}
+.competition-standings[open] > summary svg {
+  transform: rotate(0);
+}
 .football-round-pagination {
   display: grid;
   grid-template-columns: 1fr minmax(100px, 1fr) 1fr;
@@ -3511,6 +3534,16 @@
 .football-round-pagination small {
   color: var(--vault-muted);
   font-size: 11px;
+}
+.football-round-dates {
+  display: grid;
+  gap: 16px;
+}
+.football-round-date h3 {
+  margin: 0 0 8px;
+  color: var(--vault-muted);
+  font-size: 13px;
+  font-weight: 800;
 }
 .competition-query-error {
   display: flex;

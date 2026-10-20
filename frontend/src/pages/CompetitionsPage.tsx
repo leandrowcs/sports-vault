@@ -1,8 +1,9 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Trophy } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Trophy } from "lucide-react";
 import { sportsService } from "../services/sportsService";
 import { FOCUS_GROUPS, isBrazilEvent, leaguesForFocusGroup } from "../helpers/focusGroups";
+import { eventDay, groupSchedule } from "../helpers/homeSchedule";
 import { EventCard } from "../components/EventCard";
 import type { FocusGroupId, FootballStanding, League, SportEvent, Team } from "../types/sports";
 
@@ -14,13 +15,13 @@ function FootballStandings({ leagueId }: { leagueId: string }) {
   });
 
   return (
-    <section className="team-module">
-      <header><h2>Classificação</h2></header>
+    <details className="team-module competition-standings" open>
+      <summary><h2>Classificação</h2><ChevronDown size={20} aria-hidden="true" /></summary>
       {standings.isPending && <p className="standing-empty" role="status">Carregando classificação…</p>}
       {standings.isError && <div className="competition-query-error" role="alert"><p>Não foi possível carregar a classificação.</p><button type="button" onClick={() => void standings.refetch()}>Tentar novamente</button></div>}
       {standings.data && !standings.data.length && <p className="standing-empty">Classificação indisponível para esta temporada.</p>}
       {standings.data && standings.data.length > 0 && (
-        <div className="football-standings-scroll" role="region" aria-label="Classificação do Brasileirão" tabIndex={0}>
+        <div className="football-standings-scroll" role="region" aria-label={`Classificação ${leagueId === "brasileirao-a" ? "da Série A" : "da Série B"}`} tabIndex={0}>
           <table className="football-standings">
             <thead><tr><th scope="col">Pos.</th><th scope="col">Clube</th><th scope="col">Pts</th><th scope="col">J</th><th scope="col">V</th><th scope="col">E</th><th scope="col">D</th><th scope="col">GP</th><th scope="col">GC</th><th scope="col">SG</th></tr></thead>
             <tbody>{standings.data.map((row) => (
@@ -31,7 +32,52 @@ function FootballStandings({ leagueId }: { leagueId: string }) {
           </table>
         </div>
       )}
-    </section>
+    </details>
+  );
+}
+
+function RoundPagination({ label, index, count, onPrevious, onNext }: {
+  label: string;
+  index: number;
+  count: number;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <nav className="football-round-pagination" aria-label={`Navegar: ${label}`}>
+      <button type="button" aria-label="Rodada anterior" disabled={index <= 0} onClick={onPrevious}>
+        <ChevronLeft size={20} aria-hidden="true" /><span>Anterior</span>
+      </button>
+      <div aria-live="polite" aria-atomic="true"><strong>{label}</strong><small>{index + 1} de {count}</small></div>
+      <button type="button" aria-label="Próxima rodada" disabled={index >= count - 1} onClick={onNext}>
+        <span>Próxima</span><ChevronRight size={20} aria-hidden="true" />
+      </button>
+    </nav>
+  );
+}
+
+function RoundEvents({ events, teams, competition, onSelectEvent }: {
+  events: SportEvent[];
+  teams: Map<string, Team>;
+  competition: League;
+  onSelectEvent: (event: SportEvent) => void;
+}) {
+  const missingTeams = events.some((event) => !teams.has(event.homeTeamId) || !teams.has(event.awayTeamId));
+  if (missingTeams) return <p className="standing-empty" role="alert">Dados dos clubes desta rodada indisponíveis.</p>;
+
+  return (
+    <div className="football-round-dates">
+      {groupSchedule(events, eventDay).map(([day, dayEvents]) => (
+        <section className="football-round-date" key={day}>
+          <h3>{day}</h3>
+          <div className="game-list">
+            {dayEvents.map((event) => (
+              <EventCard key={event.id} event={event} home={teams.get(event.homeTeamId)!} away={teams.get(event.awayTeamId)!} competition={competition} onSelect={onSelectEvent} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
   );
 }
 
@@ -71,13 +117,17 @@ export function CompetitionsPage({
   const leagueIds = new Set(selectedLeagues.map((league) => league.id));
   const standingsLeagueId = activeLeagueId === "brasileirao-a" || activeLeagueId === "brasileirao-b" ? activeLeagueId : null;
   const showCupRounds = activeLeagueId === "copa-do-brasil";
+  const showLeagueSchedule = activeLeagueId === "brasileirao-a" || activeLeagueId === "brasileirao-b";
+  const hasSeasonSchedule = showCupRounds || showLeagueSchedule;
   const cupSchedule = useQuery({
     queryKey: ["football-rounds", activeLeagueId],
     queryFn: () => sportsService.getFootballSeasonSchedule(activeLeagueId!),
-    enabled: showCupRounds,
+    enabled: hasSeasonSchedule,
     staleTime: 60_000,
   });
   const [selectedRoundKey, setSelectedRoundKey] = useState<string | null>(null);
+  const [upcomingRoundIndex, setUpcomingRoundIndex] = useState(0);
+  const [resultsRoundIndex, setResultsRoundIndex] = useState<number | null>(null);
 
   const scopedEvents = events
     .filter((event) => leagueIds.has(event.leagueId))
@@ -89,10 +139,10 @@ export function CompetitionsPage({
     .filter((event) => event.status === "finished")
     .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
 
-  const cupRounds = useMemo(() => {
+  const competitionRounds = useMemo(() => {
     const groups = new Map<string, SportEvent[]>();
     for (const event of cupSchedule.data?.events ?? []) {
-      const label = event.roundLabel || "Partidas";
+      const label = showCupRounds ? event.roundLabel || "Partidas" : event.roundLabel || eventDay(event);
       const roundEvents = groups.get(label) ?? [];
       roundEvents.push(event);
       groups.set(label, roundEvents);
@@ -103,7 +153,18 @@ export function CompetitionsPage({
       events: roundEvents,
       startsAt: roundEvents[0]?.startsAt ?? "",
     })).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  }, [cupSchedule.data]);
+  }, [cupSchedule.data, showCupRounds]);
+  const cupRounds = showCupRounds ? competitionRounds : [];
+  const leagueUpcomingRounds = competitionRounds
+    .map((round) => ({ ...round, events: round.events.filter((event) => event.status !== "finished") }))
+    .filter((round) => round.events.length > 0);
+  const leagueResultsRounds = competitionRounds
+    .map((round) => ({ ...round, events: round.events.filter((event) => event.status === "finished") }))
+    .filter((round) => round.events.length > 0);
+  const activeUpcomingRoundIndex = Math.min(upcomingRoundIndex, Math.max(leagueUpcomingRounds.length - 1, 0));
+  const activeResultsRoundIndex = Math.min(resultsRoundIndex ?? leagueResultsRounds.length - 1, Math.max(leagueResultsRounds.length - 1, 0));
+  const activeUpcomingRound = leagueUpcomingRounds[activeUpcomingRoundIndex];
+  const activeResultsRound = leagueResultsRounds[activeResultsRoundIndex];
   const latestPlayedRoundIndex = cupRounds.reduce((latest, round, index) =>
     round.events.some((event) => event.status !== "scheduled") ? index : latest, -1);
   const selectedRoundIndex = Math.max(0, cupRounds.findIndex((round) => round.key === selectedRoundKey));
@@ -114,9 +175,6 @@ export function CompetitionsPage({
   const roundTeams = useMemo(() => new Map(
     [...teams, ...(cupSchedule.data?.teams ?? [])].map((team) => [team.id, team]),
   ), [teams, cupSchedule.data]);
-  const missingRoundTeams = activeRound?.events.some((event) =>
-    !roundTeams.has(event.homeTeamId) || !roundTeams.has(event.awayTeamId),
-  ) ?? false;
 
   const groupLabel = FOCUS_GROUPS.find((group) => group.id === focusGroup)?.label ?? "Competição";
 
@@ -161,77 +219,98 @@ export function CompetitionsPage({
       >
       {standingsLeagueId && <FootballStandings leagueId={standingsLeagueId} />}
 
-      {showCupRounds ? (
+      {hasSeasonSchedule ? (
+        <>
+        {cupSchedule.isPending && <p className="standing-empty" role="status">Carregando partidas da temporada…</p>}
+        {cupSchedule.isError && <div className="competition-query-error" role="alert"><p>Não foi possível carregar as partidas da temporada.</p><button type="button" onClick={() => void cupSchedule.refetch()}>Tentar novamente</button></div>}
+        {cupSchedule.data && !competitionRounds.length && <p className="standing-empty">Nenhuma partida disponível nesta temporada.</p>}
+        {showCupRounds && activeRound && (
         <section className="team-module">
           <header><h2>Rodadas da Copa do Brasil</h2></header>
-          {cupSchedule.isPending && <p className="standing-empty" role="status">Carregando rodadas…</p>}
-          {cupSchedule.isError && <div className="competition-query-error" role="alert"><p>Não foi possível carregar as rodadas.</p><button type="button" onClick={() => void cupSchedule.refetch()}>Tentar novamente</button></div>}
-          {cupSchedule.data && !cupRounds.length && <p className="standing-empty">Nenhuma rodada disponível nesta temporada.</p>}
-          {activeRound && (
-            <>
-              <nav className="football-round-pagination" aria-label="Navegar pelas rodadas da Copa do Brasil">
-                <button type="button" aria-label="Rodada anterior" disabled={activeRoundIndex === 0} onClick={() => setSelectedRoundKey(cupRounds[activeRoundIndex - 1]?.key ?? null)}>
-                  <ChevronLeft size={20} aria-hidden="true" /><span>Anterior</span>
-                </button>
-                <div aria-live="polite" aria-atomic="true"><strong>{activeRound.label}</strong><small>{activeRoundIndex + 1} de {cupRounds.length}</small></div>
-                <button type="button" aria-label="Próxima rodada" disabled={activeRoundIndex >= cupRounds.length - 1} onClick={() => setSelectedRoundKey(cupRounds[activeRoundIndex + 1]?.key ?? null)}>
-                  <span>Próxima</span><ChevronRight size={20} aria-hidden="true" />
-                </button>
-              </nav>
-              {missingRoundTeams ? (
-                <p className="standing-empty" role="alert">Dados dos clubes desta rodada indisponíveis.</p>
-              ) : (
-                <div className="game-list">
-                  {activeRound.events.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      home={roundTeams.get(event.homeTeamId)!}
-                      away={roundTeams.get(event.awayTeamId)!}
-                      competition={getLeague(event.leagueId)}
-                      onSelect={(selectedEvent) => onSelectEvent(selectedEvent, cupSchedule.data?.teams)}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+          <RoundPagination
+            label={activeRound.label}
+            index={activeRoundIndex}
+            count={cupRounds.length}
+            onPrevious={() => setSelectedRoundKey(cupRounds[activeRoundIndex - 1]?.key ?? null)}
+            onNext={() => setSelectedRoundKey(cupRounds[activeRoundIndex + 1]?.key ?? null)}
+          />
+          <RoundEvents
+            events={activeRound.events}
+            teams={roundTeams}
+            competition={getLeague("copa-do-brasil")}
+            onSelectEvent={(event) => onSelectEvent(event, cupSchedule.data?.teams)}
+          />
         </section>
-      ) : (
+        )}
+        {showLeagueSchedule && (
       <>
-      <section className="team-module">
-        <header>
-          <h2>Ao vivo e próximos jogos</h2>
-        </header>
-        {liveAndUpcoming.length ? (
-          <div className="game-list">
-            {liveAndUpcoming.map((event) => (
-              <EventCard key={event.id} event={event} home={getTeam(event.homeTeamId)} away={getTeam(event.awayTeamId)} competition={getLeague(event.leagueId)} onSelect={onSelectEvent} />
-            ))}
-          </div>
-        ) : (
-          <p className="standing-empty">Nenhum jogo agendado no recorte carregado.</p>
-        )}
-      </section>
+        <section className="team-module">
+          <header><h2>Próximos jogos</h2></header>
+          {cupSchedule.data && activeUpcomingRound ? (
+            <>
+              <RoundPagination
+                label={activeUpcomingRound.label}
+                index={activeUpcomingRoundIndex}
+                count={leagueUpcomingRounds.length}
+                onPrevious={() => setUpcomingRoundIndex((index) => Math.max(0, Math.min(index, leagueUpcomingRounds.length - 1) - 1))}
+                onNext={() => setUpcomingRoundIndex((index) => Math.min(leagueUpcomingRounds.length - 1, (index ?? 0) + 1))}
+              />
+              <RoundEvents
+                events={activeUpcomingRound.events}
+                teams={roundTeams}
+                competition={getLeague(activeLeagueId!)}
+                onSelectEvent={(event) => onSelectEvent(event, cupSchedule.data?.teams)}
+              />
+            </>
+          ) : cupSchedule.data ? (
+            <p className="standing-empty">Nenhum jogo futuro disponível.</p>
+          ) : null}
+        </section>
 
-      <section className="team-module">
-        <header>
-          <h2>Últimos resultados</h2>
-        </header>
-        {recentResults.length ? (
-          <div className="game-list">
-            {recentResults.map((event) => (
-              <EventCard key={event.id} event={event} home={getTeam(event.homeTeamId)} away={getTeam(event.awayTeamId)} competition={getLeague(event.leagueId)} onSelect={onSelectEvent} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <Trophy size={25} />
-            <h3>Nenhum resultado disponível.</h3>
-          </div>
-        )}
-      </section>
+        <section className="team-module">
+          <header><h2>Últimos resultados</h2></header>
+          {cupSchedule.data && activeResultsRound ? (
+            <>
+              <RoundPagination
+                label={activeResultsRound.label}
+                index={activeResultsRoundIndex}
+                count={leagueResultsRounds.length}
+                onPrevious={() => setResultsRoundIndex((index) => Math.max(0, (index ?? leagueResultsRounds.length - 1) - 1))}
+                onNext={() => setResultsRoundIndex((index) => Math.min(leagueResultsRounds.length - 1, (index ?? leagueResultsRounds.length - 1) + 1))}
+              />
+              <RoundEvents
+                events={activeResultsRound.events}
+                teams={roundTeams}
+                competition={getLeague(activeLeagueId!)}
+                onSelectEvent={(event) => onSelectEvent(event, cupSchedule.data?.teams)}
+              />
+            </>
+          ) : cupSchedule.data ? (
+            <div className="empty-state"><Trophy size={25} /><h3>Nenhum resultado disponível.</h3></div>
+          ) : null}
+        </section>
       </>
+        )}
+        </>
+      ) : (
+        <>
+          <section className="team-module">
+            <header><h2>Ao vivo e próximos jogos</h2></header>
+            {liveAndUpcoming.length ? (
+              <div className="game-list">{liveAndUpcoming.map((event) => (
+                <EventCard key={event.id} event={event} home={getTeam(event.homeTeamId)} away={getTeam(event.awayTeamId)} competition={getLeague(event.leagueId)} onSelect={onSelectEvent} />
+              ))}</div>
+            ) : <p className="standing-empty">Nenhum jogo agendado no recorte carregado.</p>}
+          </section>
+          <section className="team-module">
+            <header><h2>Últimos resultados</h2></header>
+            {recentResults.length ? (
+              <div className="game-list">{recentResults.map((event) => (
+                <EventCard key={event.id} event={event} home={getTeam(event.homeTeamId)} away={getTeam(event.awayTeamId)} competition={getLeague(event.leagueId)} onSelect={onSelectEvent} />
+              ))}</div>
+            ) : <div className="empty-state"><Trophy size={25} /><h3>Nenhum resultado disponível.</h3></div>}
+          </section>
+        </>
       )}
       </div>
     </section>
