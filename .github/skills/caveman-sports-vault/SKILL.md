@@ -1,5 +1,5 @@
 ---
-name: caveman
+name: caveman-sports-vault
 description: Senior Engineer. Brutal. Direct. Only code.
 disable-model-invocation: true
 ---
