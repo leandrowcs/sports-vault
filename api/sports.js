@@ -61,6 +61,14 @@ module.exports = async function handler(request, response) {
       else if (type === 'nba-team-conferences') payload = await nba.nbaTeamConferences();
       else if (type === 'nba-last-game') payload = await nba.nbaLastGameDate(year);
       else if (type === 'nba-standings') payload = await nba.nbaStandings(year);
+      else if (type === 'nba-leaders') {
+        const category = request.query.category;
+        if (typeof category !== 'string' || !Object.hasOwn(nba.nbaLeaderCategories, category)) {
+          response.status(400).json({ error: 'Categoria inválida.' });
+          return;
+        }
+        payload = await nba.nbaLeaders(year, category);
+      }
       else if (type === 'nba-finals') payload = await nba.nbaFinals(year);
       else if (type === 'nba-calendar' || type === 'nba-week') {
         const date = request.query.date;

@@ -4,6 +4,14 @@ export interface NbaSeason { year: number; label: string; phase: number }
 export interface NbaEvent extends SportEvent { home: Team; away: Team; seasonYear: number; shortStatus: string }
 export interface NbaStanding { team: Team; position: number; stats: Record<string, string> }
 export interface NbaConference { name: string; rows: NbaStanding[] }
+export interface NbaLeader {
+  rank: number;
+  athleteId: string;
+  name: string;
+  teamName: string;
+  teamAbbreviation: string;
+  value: string;
+}
 export interface NbaFinalSeries {
   id: string;
   label: string;

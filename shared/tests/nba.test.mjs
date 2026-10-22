@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { nbaCalendar, nbaEvent, nbaLastGameDate, nbaTeamConferences, nbaTeamSeason, normalizeNbaGame, normalizeStandings } from '../nba.mjs';
+import { nbaCalendar, nbaEvent, nbaLastGameDate, nbaLeaders, nbaTeamConferences, nbaTeamSeason, normalizeNbaGame, normalizeNbaLeaders, normalizeStandings } from '../nba.mjs';
 
 test('previous season date skips unplayed fixtures and uses the local game date', async (t) => {
   t.mock.method(globalThis, 'fetch', async (input) => {
@@ -62,6 +62,48 @@ test('calendar supports schedule score objects without inventing absent scores',
 test('conference position uses provider seed instead of raw entry ordering', () => {
   const payload = { children: [{ abbreviation: 'West', standings: { season: 2026, seasonType: 2, entries: [6, 1, 3].map((seed) => ({ team: team(String(seed)), stats: [{ name: 'playoffSeed', value: seed, displayValue: String(seed) }] })) } }] };
   assert.deepEqual(normalizeStandings(payload, 2026)[0].rows.map((row) => row.position), [1, 3, 6]);
+});
+
+test('season leaders normalize only regular-season category data and cap rankings at ten', () => {
+  const year = 2034;
+  const entries = Array.from({ length: 12 }, (_, index) => ({
+    value: 30 - index,
+    displayValue: String(30 - index),
+    athlete: { $ref: `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/athletes/${index + 1}?lang=en` },
+    team: { $ref: `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/teams/10?lang=en` },
+  }));
+  const payload = { $ref: `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/types/2/leaders`, categories: [{ name: 'fieldGoalPercentage', leaders: entries }] };
+  const athletes = Object.fromEntries(entries.map((entry, index) => [String(index + 1), { displayName: `Player ${index + 1}` }]));
+  const teams = { 10: { displayName: 'Team', abbreviation: 'T' } };
+  const result = normalizeNbaLeaders(payload, year, 'fieldGoalPercentage', { athletes, teams });
+  assert.equal(result.length, 10);
+  assert.deepEqual(result[0], { rank: 1, athleteId: '1', name: 'Player 1', teamName: 'Team', teamAbbreviation: 'T', value: '30%' });
+  assert.deepEqual(normalizeNbaLeaders(payload, year - 1, 'fieldGoalPercentage', { athletes, teams }), []);
+  assert.deepEqual(normalizeNbaLeaders(payload, year, 'pointsPerGame', { athletes, teams }), []);
+});
+
+test('season leaders request athlete and team identity for the selected category only', async (t) => {
+  const year = 2035;
+  const base = `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}`;
+  const calls = [];
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input);
+    calls.push(url.pathname);
+    if (url.pathname.endsWith('/types/2/leaders')) return Response.json({
+      $ref: `${base}/types/2/leaders`,
+      categories: [
+        { name: 'pointsPerGame', leaders: [{ value: 24, displayValue: '24.0', athlete: { $ref: `${base}/athletes/7?lang=en` }, team: { $ref: `${base}/teams/3?lang=en` } }] },
+        { name: 'blocksPerGame', leaders: [{ value: 9, athlete: { $ref: `${base}/athletes/8?lang=en` }, team: { $ref: `${base}/teams/4?lang=en` } }] },
+      ],
+    });
+    if (url.pathname.endsWith('/athletes/7')) return Response.json({ id: '7', displayName: 'Player 7' });
+    if (url.pathname.endsWith('/teams/3')) return Response.json({ id: '3', displayName: 'Team 3', abbreviation: 'T3' });
+    throw new Error(`Unexpected ESPN request: ${url.pathname}`);
+  });
+  const leaders = await nbaLeaders(year, 'pointsPerGame');
+  assert.deepEqual(leaders, [{ rank: 1, athleteId: '7', name: 'Player 7', teamName: 'Team 3', teamAbbreviation: 'T3', value: '24.0' }]);
+  assert.equal(calls.length, 3);
+  assert.ok(calls.every((path) => !path.endsWith('/athletes/8') && !path.endsWith('/teams/4')));
 });
 
 test('game preserves overtime and DNP, matches collective stats by team ID', () => {

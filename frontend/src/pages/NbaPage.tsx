@@ -8,6 +8,7 @@ import type { Team } from '../types/sports';
 import { eventDateKey, eventTimeZoneLabel } from '../helpers/eventDates';
 import { overallStandings } from '../helpers/nbaStandings';
 import { NbaFinals } from '../components/NbaFinals';
+import { NbaLeaders } from '../components/NbaLeaders';
 import './nba.css';
 
 const columns = [['V', 'wins'], ['D', 'losses'], ['PCT', 'winPercent'], ['GB', 'gamesBehind'], ['Casa', 'Home'], ['Fora', 'Road'], ['Últ. 10', 'Last Ten Games'], ['Seq.', 'streak'], ['PF/J', 'avgPointsFor'], ['PC/J', 'avgPointsAgainst']];
@@ -63,6 +64,7 @@ function NbaSeasonContent({ year, previous, onTeam, onEvent }: { year: number; p
       {date && <NbaQueryState query={calendar} />}
       {calendar.data && <NbaEvents events={calendar.data} year={year} onSelect={onEvent} />}
     </section>
+    <NbaLeaders year={year} previous={previous} />
   </>;
 }
 

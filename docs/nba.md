@@ -4,7 +4,7 @@ As páginas NBA usam endpoints específicos em `/api/sports`, com normalização
 
 ## Telas
 
-- NBA: classificação por conferência, calendário por data e acesso às 30 equipes.
+- NBA: classificação por conferência, calendário por data, líderes da temporada regular e acesso às 30 equipes.
 - Equipe: campanha e médias da temporada regular, agenda de pré-temporada/temporada regular/playoffs e elenco vigente.
 - Partida: placar total e por período (incluindo prorrogações), comparação coletiva e estatísticas individuais, com identificação de titulares e jogadores que não atuaram.
 - NBA e equipe: aba da temporada vigente e resumo da temporada anterior.
@@ -28,12 +28,19 @@ Antes de começar a temporada regular, classificação e médias podem estar vaz
 | `nba-team-conferences` | — (equipes agrupadas por conferência, a partir das divisões) |
 | `nba-last-game` | `year` (data local do último jogo concluído com placar válido) |
 | `nba-standings` | `year` |
+| `nba-leaders` | `year`, `category` |
 | `nba-calendar` | `year`, `date=YYYY-MM-DD` |
 | `nba-week` | `year`, `date=YYYY-MM-DD` (primeiro dia da semana) |
 | `nba-team` | `year`, `id` ESPN numérico |
 | `nba-game` | `id` ESPN numérico |
 
 O servidor aceita a temporada vigente e a anterior para consultas de temporada. IDs e datas são validados. Consultas ESPN são compartilhadas por até 60 segundos. Calendário vigente e partidas não encerradas são atualizados a cada minuto enquanto a tela está ativa.
+
+## Líderes da temporada
+
+A seção aparece após o calendário/resultados e antes da lista de equipes. As categorias selecionáveis são pontos por jogo, cestas de 3 por jogo, aproveitamento de arremessos, rebotes, assistências, roubos e tocos por jogo. Cada tabela mostra até dez jogadores, equipe e valor; percentual de arremessos mantém a unidade `%`.
+
+Os dados vêm de `seasons/{year}/types/2/leaders` da API Core ESPN, limitados ao ano selecionado e à temporada regular. Identidades de atletas e equipes são carregadas pelos respectivos IDs sazonais. Dados ausentes não são preenchidos com estatísticas históricas ou de outra temporada. Quando a categoria ainda não tem líderes publicados, a tabela informa indisponibilidade e preserva as demais áreas da página.
 
 ## Validação
 
@@ -43,6 +50,6 @@ npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
 
-Os testes de dados cobrem isolamento de temporada, ordenação de conferências, scores em formatos distintos, dados ausentes, prorrogação, jogadores sem participação e totais coletivos associados à equipe correta.
+Os testes de dados cobrem isolamento de temporada, líderes regulares limitados a dez, identidade de atleta/equipe, ordenação de conferências, scores em formatos distintos, dados ausentes, prorrogação, jogadores sem participação e totais coletivos associados à equipe correta.
 
 A NBA no início mostra os quatro primeiros de cada conferência e duas semanas de segunda a domingo: a atual aberta e a seguinte recolhida. As semanas são calculadas no fuso `America/Toronto`; o rótulo EST/EDT acompanha a data do evento. A agenda semanal agrega sete consultas diárias em paralelo, pois o scoreboard NBA rejeita intervalos de datas.

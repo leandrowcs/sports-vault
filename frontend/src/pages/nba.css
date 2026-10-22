@@ -87,6 +87,46 @@
 .nba-team-filters {
   margin-bottom: 6px;
 }
+.nba-leader-category {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+.nba-leader-category select {
+  min-height: 42px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--vault-border);
+  border-radius: 8px;
+  background: var(--vault-surface-raised);
+  color: var(--vault-ink);
+  font: inherit;
+}
+.nba-leaders-table {
+  min-width: 480px;
+}
+.nba-leaders-table th[scope="row"] {
+  text-align: left;
+}
+.nba-leader-team {
+  white-space: normal;
+}
+.nba-leader-team strong {
+  white-space: nowrap;
+}
+.nba-leaders-table caption.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .nba-standings-tabs {
   margin: 18px 0;
 }
