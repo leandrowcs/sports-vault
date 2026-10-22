@@ -102,7 +102,7 @@ test('season leaders request athlete and team identity for the selected category
     if (url.pathname.endsWith('/teams/3')) return Response.json({ id: '3', displayName: 'Team 3', abbreviation: 'T3' });
     if (url.pathname.endsWith('/athletes/7/statistics/0')) return Response.json({
       athlete: { $ref: `${base}/athletes/7?lang=en` },
-      splits: [{ categories: [{ stats: [{ name: 'points', displayValue: '1800' }] }] }],
+      splits: { categories: [{ stats: [{ name: 'points', displayValue: '1800' }] }] },
     });
     throw new Error(`Unexpected ESPN request: ${url.pathname}`);
   });

@@ -26,6 +26,14 @@ async function read(url, allowMissing = false) {
   return promise;
 }
 
+async function mapInBatches(items, batchSize, mapItem) {
+  const results = [];
+  for (let index = 0; index < items.length; index += batchSize) {
+    results.push(...await Promise.all(items.slice(index, index + batchSize).map(mapItem)));
+  }
+  return results;
+}
+
 export function nbaTeam(team) {
   return { id: `nba-${team.id}`, espnTeamId: String(team.id), leagueId: 'nba', name: team.displayName,
     shortName: team.abbreviation, city: team.location ?? '', color: `#${team.color || 'ea580c'}`,
@@ -116,7 +124,8 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
     if (!athlete?.displayName || !team?.displayName || !Number.isFinite(number)) return [];
     const rawValue = entry.displayValue ?? String(entry.value);
     const statistics = athleteId ? identities.statistics?.[athleteId] : null;
-    const total = statistics?.splits?.flatMap((split) => split.categories ?? [])
+    const splits = Array.isArray(statistics?.splits) ? statistics.splits : statistics?.splits ? [statistics.splits] : [];
+    const total = splits.flatMap((split) => split.categories ?? [])
       .flatMap((group) => group.stats ?? []).find((stat) => stat.name === definition.total);
     return [{
       rank: index + 1,
@@ -139,18 +148,18 @@ export async function nbaLeaders(year, category) {
   const athleteIds = [...new Set(candidates.map((entry) => entry.athlete?.$ref?.match(/\/athletes\/(\d+)(?:\?|$)/)?.[1]).filter(Boolean))];
   const teamIds = [...new Set(candidates.map((entry) => entry.team?.$ref?.match(/\/teams\/(\d+)(?:\?|$)/)?.[1]).filter(Boolean))];
   const [athletes, teams, statistics] = await Promise.all([
-    Promise.all(athleteIds.map(async (id) => {
+    mapInBatches(athleteIds, 5, async (id) => {
       const athlete = await read(`${CORE}/seasons/${year}/athletes/${id}`, true);
       return athlete?.id === id ? [id, athlete] : null;
-    })),
-    Promise.all(teamIds.map(async (id) => {
+    }),
+    mapInBatches(teamIds, 5, async (id) => {
       const team = await read(`${CORE}/seasons/${year}/teams/${id}`, true);
       return team?.id === id ? [id, team] : null;
-    })),
-    Promise.all(athleteIds.map(async (id) => {
+    }),
+    mapInBatches(athleteIds, 5, async (id) => {
       const stats = await read(`${CORE}/seasons/${year}/types/2/athletes/${id}/statistics/0`, true);
       return stats?.athlete?.$ref?.match(/\/athletes\/(\d+)(?:\?|$)/)?.[1] === id ? [id, stats] : null;
-    })),
+    }),
   ]);
   return normalizeNbaLeaders(payload, year, category, {
     athletes: Object.fromEntries(athletes.filter(Boolean)),
