@@ -244,8 +244,9 @@ export function CompetitionsPage({
         )}
         {showLeagueSchedule && (
       <>
-        <section className="team-module">
-          <header><h2>Próximos jogos</h2></header>
+        <details className="team-module competition-standings" open>
+          <summary><h2>Próximos jogos</h2><ChevronDown size={20} aria-hidden="true" /></summary>
+          <div>
           {cupSchedule.data && activeUpcomingRound ? (
             <>
               <RoundPagination
@@ -265,10 +266,12 @@ export function CompetitionsPage({
           ) : cupSchedule.data ? (
             <p className="standing-empty">Nenhum jogo futuro disponível.</p>
           ) : null}
-        </section>
+          </div>
+        </details>
 
-        <section className="team-module">
-          <header><h2>Últimos resultados</h2></header>
+        <details className="team-module competition-standings" open>
+          <summary><h2>Últimos resultados</h2><ChevronDown size={20} aria-hidden="true" /></summary>
+          <div>
           {cupSchedule.data && activeResultsRound ? (
             <>
               <RoundPagination
@@ -288,7 +291,8 @@ export function CompetitionsPage({
           ) : cupSchedule.data ? (
             <div className="empty-state"><Trophy size={25} /><h3>Nenhum resultado disponível.</h3></div>
           ) : null}
-        </section>
+          </div>
+        </details>
       </>
         )}
         </>
