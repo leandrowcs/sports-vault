@@ -4,7 +4,7 @@ const CORE = 'https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba'
 export const nbaLeaderCategories = {
   pointsPerGame: { label: 'Pontos por jogo', suffix: '', total: 'points' },
   '3PointsMadePerGame': { label: 'Cestas de 3 por jogo', suffix: '', total: 'threePointFieldGoalsMade' },
-  fieldGoalPercentage: { label: 'Aproveitamento de arremessos', suffix: '%', total: 'fieldGoalPct', totalSuffix: '%' },
+  fieldGoalPercentage: { label: 'Aproveitamento de arremessos', suffix: '%', totalMade: 'fieldGoalsMade', totalAttempted: 'fieldGoalsAttempted' },
   reboundsPerGame: { label: 'Rebotes por jogo', suffix: '', total: 'rebounds' },
   assistsPerGame: { label: 'Assistências por jogo', suffix: '', total: 'assists' },
   stealsPerGame: { label: 'Roubos por jogo', suffix: '', total: 'steals' },
@@ -125,8 +125,13 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
     const rawValue = entry.displayValue ?? String(entry.value);
     const statistics = athleteId ? identities.statistics?.[athleteId] : null;
     const splits = Array.isArray(statistics?.splits) ? statistics.splits : statistics?.splits ? [statistics.splits] : [];
-    const total = splits.flatMap((split) => split.categories ?? [])
-      .flatMap((group) => group.stats ?? []).find((stat) => stat.name === definition.total);
+    const seasonStats = splits.flatMap((split) => split.categories ?? []).flatMap((group) => group.stats ?? []);
+    const totalStat = seasonStats.find((stat) => stat.name === definition.total);
+    const made = definition.totalMade ? seasonStats.find((stat) => stat.name === definition.totalMade) : undefined;
+    const attempted = definition.totalAttempted ? seasonStats.find((stat) => stat.name === definition.totalAttempted) : undefined;
+    const totalValue = made && attempted
+      ? `${made.displayValue ?? made.value}/${attempted.displayValue ?? attempted.value}`
+      : totalStat?.displayValue ?? totalStat?.value;
     return [{
       rank: index + 1,
       athleteId,
@@ -134,7 +139,7 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
       teamName: team.displayName,
       teamAbbreviation: team.abbreviation ?? '',
       value: `${rawValue}${definition.suffix}`,
-      ...(total && { totalValue: `${total.displayValue ?? total.value}${definition.totalSuffix ?? ''}` }),
+      ...(totalValue !== undefined && { totalValue: `${totalValue}${definition.totalSuffix ?? ''}` }),
     }];
   });
 }

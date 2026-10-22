@@ -75,10 +75,13 @@ test('season leaders normalize top 50 regular-season entries and season totals',
   const payload = { $ref: `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/types/2/leaders`, categories: [{ name: 'fieldGoalPercentage', leaders: entries }] };
   const athletes = Object.fromEntries(entries.map((entry, index) => [String(index + 1), { displayName: `Player ${index + 1}` }]));
   const teams = { 10: { displayName: 'Team', abbreviation: 'T' } };
-  const statistics = { 1: { splits: [{ categories: [{ stats: [{ name: 'fieldGoalPct', displayValue: '47.6' }] }] }] } };
+  const statistics = { 1: { splits: [{ categories: [{ stats: [
+    { name: 'fieldGoalsMade', displayValue: '693' },
+    { name: 'fieldGoalsAttempted', displayValue: '1457' },
+  ] }] }] } };
   const result = normalizeNbaLeaders(payload, year, 'fieldGoalPercentage', { athletes, teams, statistics });
   assert.equal(result.length, 50);
-  assert.deepEqual(result[0], { rank: 1, athleteId: '1', name: 'Player 1', teamName: 'Team', teamAbbreviation: 'T', value: '30%', totalValue: '47.6%' });
+  assert.deepEqual(result[0], { rank: 1, athleteId: '1', name: 'Player 1', teamName: 'Team', teamAbbreviation: 'T', value: '30%', totalValue: '693/1457' });
   assert.equal(result.at(-1).rank, 50);
   assert.deepEqual(normalizeNbaLeaders(payload, year - 1, 'fieldGoalPercentage', { athletes, teams }), []);
   assert.deepEqual(normalizeNbaLeaders(payload, year, 'pointsPerGame', { athletes, teams }), []);
