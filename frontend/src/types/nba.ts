@@ -11,6 +11,7 @@ export interface NbaLeader {
   teamName: string;
   teamAbbreviation: string;
   value: string;
+  totalValue?: string;
 }
 export interface NbaFinalSeries {
   id: string;

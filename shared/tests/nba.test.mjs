@@ -64,9 +64,9 @@ test('conference position uses provider seed instead of raw entry ordering', () 
   assert.deepEqual(normalizeStandings(payload, 2026)[0].rows.map((row) => row.position), [1, 3, 6]);
 });
 
-test('season leaders normalize only regular-season category data and cap rankings at ten', () => {
+test('season leaders normalize top 50 regular-season entries and season totals', () => {
   const year = 2034;
-  const entries = Array.from({ length: 12 }, (_, index) => ({
+  const entries = Array.from({ length: 60 }, (_, index) => ({
     value: 30 - index,
     displayValue: String(30 - index),
     athlete: { $ref: `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/athletes/${index + 1}?lang=en` },
@@ -75,9 +75,11 @@ test('season leaders normalize only regular-season category data and cap ranking
   const payload = { $ref: `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/types/2/leaders`, categories: [{ name: 'fieldGoalPercentage', leaders: entries }] };
   const athletes = Object.fromEntries(entries.map((entry, index) => [String(index + 1), { displayName: `Player ${index + 1}` }]));
   const teams = { 10: { displayName: 'Team', abbreviation: 'T' } };
-  const result = normalizeNbaLeaders(payload, year, 'fieldGoalPercentage', { athletes, teams });
-  assert.equal(result.length, 10);
-  assert.deepEqual(result[0], { rank: 1, athleteId: '1', name: 'Player 1', teamName: 'Team', teamAbbreviation: 'T', value: '30%' });
+  const statistics = { 1: { splits: [{ categories: [{ stats: [{ name: 'fieldGoalPct', displayValue: '47.6' }] }] }] } };
+  const result = normalizeNbaLeaders(payload, year, 'fieldGoalPercentage', { athletes, teams, statistics });
+  assert.equal(result.length, 50);
+  assert.deepEqual(result[0], { rank: 1, athleteId: '1', name: 'Player 1', teamName: 'Team', teamAbbreviation: 'T', value: '30%', totalValue: '47.6%' });
+  assert.equal(result.at(-1).rank, 50);
   assert.deepEqual(normalizeNbaLeaders(payload, year - 1, 'fieldGoalPercentage', { athletes, teams }), []);
   assert.deepEqual(normalizeNbaLeaders(payload, year, 'pointsPerGame', { athletes, teams }), []);
 });
@@ -88,7 +90,7 @@ test('season leaders request athlete and team identity for the selected category
   const calls = [];
   t.mock.method(globalThis, 'fetch', async (input) => {
     const url = new URL(input);
-    calls.push(url.pathname);
+    calls.push(url);
     if (url.pathname.endsWith('/types/2/leaders')) return Response.json({
       $ref: `${base}/types/2/leaders`,
       categories: [
@@ -98,12 +100,17 @@ test('season leaders request athlete and team identity for the selected category
     });
     if (url.pathname.endsWith('/athletes/7')) return Response.json({ id: '7', displayName: 'Player 7' });
     if (url.pathname.endsWith('/teams/3')) return Response.json({ id: '3', displayName: 'Team 3', abbreviation: 'T3' });
+    if (url.pathname.endsWith('/athletes/7/statistics/0')) return Response.json({
+      athlete: { $ref: `${base}/athletes/7?lang=en` },
+      splits: [{ categories: [{ stats: [{ name: 'points', displayValue: '1800' }] }] }],
+    });
     throw new Error(`Unexpected ESPN request: ${url.pathname}`);
   });
   const leaders = await nbaLeaders(year, 'pointsPerGame');
-  assert.deepEqual(leaders, [{ rank: 1, athleteId: '7', name: 'Player 7', teamName: 'Team 3', teamAbbreviation: 'T3', value: '24.0' }]);
-  assert.equal(calls.length, 3);
-  assert.ok(calls.every((path) => !path.endsWith('/athletes/8') && !path.endsWith('/teams/4')));
+  assert.deepEqual(leaders, [{ rank: 1, athleteId: '7', name: 'Player 7', teamName: 'Team 3', teamAbbreviation: 'T3', value: '24.0', totalValue: '1800' }]);
+  assert.equal(calls.length, 4);
+  assert.equal(calls.find((url) => url.pathname.endsWith('/types/2/leaders')).searchParams.get('limit'), '50');
+  assert.ok(calls.every((url) => !url.pathname.endsWith('/athletes/8') && !url.pathname.endsWith('/teams/4')));
 });
 
 test('game preserves overtime and DNP, matches collective stats by team ID', () => {

@@ -2,13 +2,13 @@ const SITE = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 const STANDINGS = 'https://site.api.espn.com/apis/v2/sports/basketball/nba/standings';
 const CORE = 'https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba';
 export const nbaLeaderCategories = {
-  pointsPerGame: { label: 'Pontos por jogo', suffix: '' },
-  '3PointsMadePerGame': { label: 'Cestas de 3 por jogo', suffix: '' },
-  fieldGoalPercentage: { label: 'Aproveitamento de arremessos', suffix: '%' },
-  reboundsPerGame: { label: 'Rebotes por jogo', suffix: '' },
-  assistsPerGame: { label: 'Assistências por jogo', suffix: '' },
-  stealsPerGame: { label: 'Roubos por jogo', suffix: '' },
-  blocksPerGame: { label: 'Tocos por jogo', suffix: '' },
+  pointsPerGame: { label: 'Pontos por jogo', suffix: '', total: 'points' },
+  '3PointsMadePerGame': { label: 'Cestas de 3 por jogo', suffix: '', total: 'threePointFieldGoalsMade' },
+  fieldGoalPercentage: { label: 'Aproveitamento de arremessos', suffix: '%', total: 'fieldGoalPct', totalSuffix: '%' },
+  reboundsPerGame: { label: 'Rebotes por jogo', suffix: '', total: 'rebounds' },
+  assistsPerGame: { label: 'Assistências por jogo', suffix: '', total: 'assists' },
+  stealsPerGame: { label: 'Roubos por jogo', suffix: '', total: 'steals' },
+  blocksPerGame: { label: 'Tocos por jogo', suffix: '', total: 'blocks' },
 };
 const cache = new Map();
 
@@ -107,7 +107,7 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
   const definition = Object.hasOwn(nbaLeaderCategories, category) ? nbaLeaderCategories[category] : null;
   if (!definition || !payload?.$ref?.includes(`/seasons/${year}/types/2/leaders`)) return [];
   const entries = payload.categories?.find((item) => item.name === category)?.leaders ?? [];
-  return entries.slice(0, 10).flatMap((entry, index) => {
+  return entries.slice(0, 50).flatMap((entry, index) => {
     const athleteId = entry.athlete?.$ref?.match(/\/athletes\/(\d+)(?:\?|$)/)?.[1];
     const teamId = entry.team?.$ref?.match(/\/teams\/(\d+)(?:\?|$)/)?.[1];
     const athlete = athleteId ? identities.athletes?.[athleteId] : null;
@@ -115,6 +115,9 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
     const number = Number(entry.value);
     if (!athlete?.displayName || !team?.displayName || !Number.isFinite(number)) return [];
     const rawValue = entry.displayValue ?? String(entry.value);
+    const statistics = athleteId ? identities.statistics?.[athleteId] : null;
+    const total = statistics?.splits?.flatMap((split) => split.categories ?? [])
+      .flatMap((group) => group.stats ?? []).find((stat) => stat.name === definition.total);
     return [{
       rank: index + 1,
       athleteId,
@@ -122,19 +125,20 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
       teamName: team.displayName,
       teamAbbreviation: team.abbreviation ?? '',
       value: `${rawValue}${definition.suffix}`,
+      ...(total && { totalValue: `${total.displayValue ?? total.value}${definition.totalSuffix ?? ''}` }),
     }];
   });
 }
 
 export async function nbaLeaders(year, category) {
   if (!Object.hasOwn(nbaLeaderCategories, category)) throw new Error('Categoria de líderes NBA inválida.');
-  const payload = await read(`${CORE}/seasons/${year}/types/2/leaders`, true);
+  const payload = await read(`${CORE}/seasons/${year}/types/2/leaders?limit=50`, true);
   if (!payload?.$ref?.includes(`/seasons/${year}/types/2/leaders`)) return [];
   const entries = payload.categories?.find((item) => item.name === category)?.leaders ?? [];
-  const candidates = entries.slice(0, 10);
+  const candidates = entries.slice(0, 50);
   const athleteIds = [...new Set(candidates.map((entry) => entry.athlete?.$ref?.match(/\/athletes\/(\d+)(?:\?|$)/)?.[1]).filter(Boolean))];
   const teamIds = [...new Set(candidates.map((entry) => entry.team?.$ref?.match(/\/teams\/(\d+)(?:\?|$)/)?.[1]).filter(Boolean))];
-  const [athletes, teams] = await Promise.all([
+  const [athletes, teams, statistics] = await Promise.all([
     Promise.all(athleteIds.map(async (id) => {
       const athlete = await read(`${CORE}/seasons/${year}/athletes/${id}`, true);
       return athlete?.id === id ? [id, athlete] : null;
@@ -143,10 +147,15 @@ export async function nbaLeaders(year, category) {
       const team = await read(`${CORE}/seasons/${year}/teams/${id}`, true);
       return team?.id === id ? [id, team] : null;
     })),
+    Promise.all(athleteIds.map(async (id) => {
+      const stats = await read(`${CORE}/seasons/${year}/types/2/athletes/${id}/statistics/0`, true);
+      return stats?.athlete?.$ref?.match(/\/athletes\/(\d+)(?:\?|$)/)?.[1] === id ? [id, stats] : null;
+    })),
   ]);
   return normalizeNbaLeaders(payload, year, category, {
     athletes: Object.fromEntries(athletes.filter(Boolean)),
     teams: Object.fromEntries(teams.filter(Boolean)),
+    statistics: Object.fromEntries(statistics.filter(Boolean)),
   });
 }
 

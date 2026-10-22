@@ -20,22 +20,23 @@ export function NbaLeaders({ year, previous }: { year: number; previous: boolean
 
   return <section className="team-module nba-leaders" aria-labelledby={`nba-leaders-title-${year}`}>
     <header><h2 id={`nba-leaders-title-${year}`}>Líderes da temporada regular</h2></header>
-    <p className="statistics-scope">Top 10 · {seasonLabel(year)} · Dados da ESPN. As estatísticas são por jogo quando indicado.</p>
+    <p className="statistics-scope">Top 50 · {seasonLabel(year)} · Dados da ESPN. Veja a média por jogo e o total da temporada; aproveitamento é percentual.</p>
     <label className="nba-leader-category">Categoria
       <select value={category} onChange={(event) => setCategory(event.target.value as (typeof categories)[number][0])}>
         {categories.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
       </select>
     </label>
     <NbaQueryState query={leaders} />
-    {leaders.data?.length ? <div className="nba-table-scroll" role="region" aria-label={`Líderes NBA: ${label}`} tabIndex={0}>
+    {leaders.data?.length ? <div className="nba-table-scroll nba-leaders-scroll" role="region" aria-label={`Líderes NBA: ${label}`} tabIndex={0}>
       <table className="nba-table nba-leaders-table">
-        <caption className="visually-hidden">Dez maiores líderes de {label.toLocaleLowerCase('pt-BR')} na temporada regular {seasonLabel(year)}</caption>
-        <thead><tr><th scope="col">#</th><th scope="col">Jogador</th><th scope="col">Equipe</th><th scope="col">{label}</th></tr></thead>
+        <caption className="visually-hidden">Cinquenta maiores líderes de {label.toLocaleLowerCase('pt-BR')} na temporada regular {seasonLabel(year)}</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Jogador</th><th scope="col">Equipe</th><th scope="col">{label}</th><th scope="col">Total</th></tr></thead>
         <tbody>{leaders.data.map((leader) => <tr key={leader.athleteId}>
           <td>{leader.rank}</td>
           <th scope="row">{leader.name}</th>
           <td><span className="nba-leader-team">{leader.teamAbbreviation && <strong>{leader.teamAbbreviation}</strong>}{leader.teamAbbreviation ? ' · ' : ''}{leader.teamName}</span></td>
           <td>{leader.value}</td>
+          <td>{leader.totalValue ?? '—'}</td>
         </tr>)}</tbody>
       </table>
     </div> : leaders.data && <p className="standing-empty">Líderes desta categoria ainda indisponíveis na temporada regular.</p>}

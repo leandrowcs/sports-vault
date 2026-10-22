@@ -107,6 +107,27 @@
 .nba-leaders-table {
   min-width: 480px;
 }
+.nba-leaders-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.nba-leaders-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.nba-leaders-table thead tr {
+  height: 40px;
+}
+.nba-leaders-table tbody tr {
+  height: 36px;
+}
+.nba-leaders-table tbody tr:nth-child(even) > * {
+  background: color-mix(in srgb, var(--vault-ink) 6%, var(--vault-surface));
+}
+.nba-leaders-table tbody tr:hover > * {
+  background: var(--sport-soft);
+}
 .nba-leaders-table th[scope="row"] {
   text-align: left;
 }
