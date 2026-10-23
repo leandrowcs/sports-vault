@@ -38,7 +38,7 @@ O servidor aceita a temporada vigente e a anterior para consultas de temporada. 
 
 ## Líderes da temporada
 
-A seção aparece após o calendário/resultados e antes da lista de equipes. As categorias selecionáveis são pontos por jogo, cestas de 3 por jogo, aproveitamento de arremessos, rebotes, assistências, roubos e tocos por jogo. Cada tabela mostra até cinquenta jogadores, com rolagem limitada visualmente a dez linhas, equipe, média e total da temporada. No aproveitamento, a média é percentual e o total aparece como arremessos certos/tentados. As linhas alternadas usam fundo cinza.
+A seção aparece após o calendário/resultados e antes da lista de equipes. As categorias selecionáveis são pontos por jogo, cestas de 3 por jogo, aproveitamento de arremessos, rebotes, assistências, roubos e tocos por jogo. Cada tabela mostra até cem jogadores, com rolagem limitada visualmente a dez linhas, equipe, média e total da temporada. No aproveitamento, a média é percentual e o total aparece como arremessos certos/tentados. As linhas alternadas usam fundo cinza.
 
 Os dados vêm de `seasons/{year}/types/2/leaders` e das estatísticas sazonais individuais da API Core ESPN, limitados ao ano selecionado e à temporada regular. Identidades de atletas e equipes são carregadas pelos respectivos IDs sazonais. Dados ausentes não são preenchidos com estatísticas históricas ou de outra temporada. Quando a categoria ainda não tem líderes publicados, a tabela informa indisponibilidade e preserva as demais áreas da página.
 

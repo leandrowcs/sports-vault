@@ -115,7 +115,7 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
   const definition = Object.hasOwn(nbaLeaderCategories, category) ? nbaLeaderCategories[category] : null;
   if (!definition || !payload?.$ref?.includes(`/seasons/${year}/types/2/leaders`)) return [];
   const entries = payload.categories?.find((item) => item.name === category)?.leaders ?? [];
-  return entries.slice(0, 50).flatMap((entry, index) => {
+  return entries.slice(0, 100).flatMap((entry, index) => {
     const athleteId = entry.athlete?.$ref?.match(/\/athletes\/(\d+)(?:\?|$)/)?.[1];
     const teamId = entry.team?.$ref?.match(/\/teams\/(\d+)(?:\?|$)/)?.[1];
     const athlete = athleteId ? identities.athletes?.[athleteId] : null;
@@ -146,10 +146,10 @@ export function normalizeNbaLeaders(payload, year, category, identities = {}) {
 
 export async function nbaLeaders(year, category) {
   if (!Object.hasOwn(nbaLeaderCategories, category)) throw new Error('Categoria de líderes NBA inválida.');
-  const payload = await read(`${CORE}/seasons/${year}/types/2/leaders?limit=50`, true);
+  const payload = await read(`${CORE}/seasons/${year}/types/2/leaders?limit=100`, true);
   if (!payload?.$ref?.includes(`/seasons/${year}/types/2/leaders`)) return [];
   const entries = payload.categories?.find((item) => item.name === category)?.leaders ?? [];
-  const candidates = entries.slice(0, 50);
+  const candidates = entries.slice(0, 100);
   const athleteIds = [...new Set(candidates.map((entry) => entry.athlete?.$ref?.match(/\/athletes\/(\d+)(?:\?|$)/)?.[1]).filter(Boolean))];
   const teamIds = [...new Set(candidates.map((entry) => entry.team?.$ref?.match(/\/teams\/(\d+)(?:\?|$)/)?.[1]).filter(Boolean))];
   const [athletes, teams, statistics] = await Promise.all([

@@ -64,9 +64,9 @@ test('conference position uses provider seed instead of raw entry ordering', () 
   assert.deepEqual(normalizeStandings(payload, 2026)[0].rows.map((row) => row.position), [1, 3, 6]);
 });
 
-test('season leaders normalize top 50 regular-season entries and season totals', () => {
+test('season leaders normalize top 100 regular-season entries and season totals', () => {
   const year = 2034;
-  const entries = Array.from({ length: 60 }, (_, index) => ({
+  const entries = Array.from({ length: 110 }, (_, index) => ({
     value: 30 - index,
     displayValue: String(30 - index),
     athlete: { $ref: `http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/athletes/${index + 1}?lang=en` },
@@ -80,9 +80,9 @@ test('season leaders normalize top 50 regular-season entries and season totals',
     { name: 'fieldGoalsAttempted', displayValue: '1457' },
   ] }] }] } };
   const result = normalizeNbaLeaders(payload, year, 'fieldGoalPercentage', { athletes, teams, statistics });
-  assert.equal(result.length, 50);
+  assert.equal(result.length, 100);
   assert.deepEqual(result[0], { rank: 1, athleteId: '1', name: 'Player 1', teamName: 'Team', teamAbbreviation: 'T', value: '30%', totalValue: '693/1457' });
-  assert.equal(result.at(-1).rank, 50);
+  assert.equal(result.at(-1).rank, 100);
   assert.deepEqual(normalizeNbaLeaders(payload, year - 1, 'fieldGoalPercentage', { athletes, teams }), []);
   assert.deepEqual(normalizeNbaLeaders(payload, year, 'pointsPerGame', { athletes, teams }), []);
 });
@@ -112,7 +112,7 @@ test('season leaders request athlete and team identity for the selected category
   const leaders = await nbaLeaders(year, 'pointsPerGame');
   assert.deepEqual(leaders, [{ rank: 1, athleteId: '7', name: 'Player 7', teamName: 'Team 3', teamAbbreviation: 'T3', value: '24.0', totalValue: '1800' }]);
   assert.equal(calls.length, 4);
-  assert.equal(calls.find((url) => url.pathname.endsWith('/types/2/leaders')).searchParams.get('limit'), '50');
+  assert.equal(calls.find((url) => url.pathname.endsWith('/types/2/leaders')).searchParams.get('limit'), '100');
   assert.ok(calls.every((url) => !url.pathname.endsWith('/athletes/8') && !url.pathname.endsWith('/teams/4')));
 });
 
