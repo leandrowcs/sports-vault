@@ -5,9 +5,10 @@ import { sportsService } from "../services/sportsService";
 import { FOCUS_GROUPS, isBrazilEvent, leaguesForFocusGroup } from "../helpers/focusGroups";
 import { eventDay, groupSchedule } from "../helpers/homeSchedule";
 import { EventCard } from "../components/EventCard";
+import { TeamCrest } from "../components/TeamCrest";
 import type { FocusGroupId, FootballStanding, League, SportEvent, Team } from "../types/sports";
 
-function FootballStandings({ leagueId }: { leagueId: string }) {
+function FootballStandings({ leagueId, teams, onTeam }: { leagueId: string; teams: Map<string, Team>; onTeam: (team: Team) => void }) {
   const standings = useQuery<FootballStanding[]>({
     queryKey: ["football-standings", leagueId],
     queryFn: () => sportsService.getLeagueStandings(leagueId),
@@ -24,11 +25,18 @@ function FootballStandings({ leagueId }: { leagueId: string }) {
         <div className="football-standings-scroll" role="region" aria-label={`Classificação ${leagueId === "brasileirao-a" ? "da Série A" : "da Série B"}`} tabIndex={0}>
           <table className="football-standings">
             <thead><tr><th scope="col">Pos.</th><th scope="col">Clube</th><th scope="col">Pts</th><th scope="col">J</th><th scope="col">V</th><th scope="col">E</th><th scope="col">D</th><th scope="col">GP</th><th scope="col">GC</th><th scope="col">SG</th></tr></thead>
-            <tbody>{standings.data.map((row) => (
-              <tr key={row.teamId}>
-                <td>{row.position}</td><th scope="row">{row.teamName}</th><td>{row.points}</td><td>{row.played}</td><td>{row.wins}</td><td>{row.draws}</td><td>{row.losses}</td><td>{row.goalsFor}</td><td>{row.goalsAgainst}</td><td>{row.goalsFor - row.goalsAgainst}</td>
-              </tr>
-            ))}</tbody>
+            <tbody>{standings.data.map((row) => {
+              const rowTeam = teams.get(row.teamId);
+              return (
+                <tr key={row.teamId}>
+                  <td>{row.position}</td>
+                  <th scope="row">{rowTeam
+                    ? <button type="button" className="football-team-link" onClick={() => onTeam(rowTeam)}><TeamCrest team={rowTeam} /><span>{row.teamName}</span></button>
+                    : row.teamName}</th>
+                  <td>{row.points}</td><td>{row.played}</td><td>{row.wins}</td><td>{row.draws}</td><td>{row.losses}</td><td>{row.goalsFor}</td><td>{row.goalsAgainst}</td><td>{row.goalsFor - row.goalsAgainst}</td>
+                </tr>
+              );
+            })}</tbody>
           </table>
         </div>
       )}
@@ -88,7 +96,10 @@ export function CompetitionsPage({
   teams,
   getTeam,
   getLeague,
+  leagueId,
+  onLeagueChange,
   onSelectEvent,
+  onTeam,
 }: {
   focusGroup: FocusGroupId;
   events: SportEvent[];
@@ -96,15 +107,15 @@ export function CompetitionsPage({
   teams: Team[];
   getTeam: (id: string) => Team;
   getLeague: (id: string) => League;
+  leagueId: string | null;
+  onLeagueChange: (leagueId: string | null) => void;
   onSelectEvent: (event: SportEvent, eventTeams?: Team[]) => void;
+  onTeam: (team: Team) => void;
 }) {
   const groupLeagues = leaguesForFocusGroup(leagues, focusGroup)
     .filter((league) => league.id !== "brasileirao-c" && league.id !== "brasileirao-d");
-  const [selection, setSelection] = useState<{ group: FocusGroupId; leagueId: string | null }>({ group: focusGroup, leagueId: null });
-  const activeLeagueId = selection.group === focusGroup && groupLeagues.some((league) => league.id === selection.leagueId)
-    ? selection.leagueId
-    : null;
-  const setActiveLeagueId = (leagueId: string | null) => setSelection({ group: focusGroup, leagueId });
+  const activeLeagueId = groupLeagues.some((league) => league.id === leagueId) ? leagueId : null;
+  const setActiveLeagueId = onLeagueChange;
   const tabId = useId();
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const tabs = [{ leagueId: null, label: "Todas" }, ...groupLeagues.map((league) => ({
@@ -217,7 +228,7 @@ export function CompetitionsPage({
         aria-labelledby={hasTabs ? `${tabId}-tab-${selectedTabIndex}` : undefined}
         className="competitions-tab-panel"
       >
-      {standingsLeagueId && <FootballStandings leagueId={standingsLeagueId} />}
+      {standingsLeagueId && <FootballStandings leagueId={standingsLeagueId} teams={roundTeams} onTeam={onTeam} />}
 
       {hasSeasonSchedule ? (
         <>

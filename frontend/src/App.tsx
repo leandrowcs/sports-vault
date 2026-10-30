@@ -9,7 +9,7 @@ import { groupTeams, toggleTeamGroup } from "./helpers/teamGroups";
 import { useCloudAuth } from "./hooks/useCloudAuth";
 import { sportsService } from "./services/sportsService";
 import { readLocalVault, subscribeToCloudVault, writeVault } from "./services/vaultStore";
-import type { League, Player, SportEvent, Team, VaultState, View } from "./types/sports";
+import type { FocusGroupId, League, Player, SportEvent, Team, VaultState, View } from "./types/sports";
 import { VaultFeedHome } from "./pages/HomePage";
 import { OnboardingScreen } from "./pages/OnboardingPage";
 import { TeamVaultPage } from "./pages/TeamPage";
@@ -42,6 +42,7 @@ function App() {
   const pageHeader = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>("home");
   const [showSearch, setShowSearch] = useState(false);
+  const [competitionTabs, setCompetitionTabs] = useState<Partial<Record<FocusGroupId, string | null>>>({});
   const [data, setData] = useState<SportsData | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [vault, setVault] = useState<VaultState>(readLocalVault);
@@ -301,8 +302,9 @@ function App() {
             onBack={() => setTeamPage(null)}
             onToggleFavorite={() => toggleTeam(teamPage.id)}
             onSelectPlayer={setPlayerPage}
-          />
-        ) : view === "home" ? (
+            onEvent={(event, eventTeams) => { setSelectedEventTeams(eventTeams ?? []); setSelectedEvent(event); }}
+                      />
+                    ) : view === "home" ? (
           <VaultFeedHome
             onViewNba={() => navigateTo('nba')}
             onViewNfl={() => navigateTo('nfl')}
@@ -320,10 +322,10 @@ function App() {
           showSearch ? (
             <TeamSearch teams={data.teams} leagues={data.leagues} savedTeamIds={vault.teamIds} onToggle={toggleTeam} onSelect={(selected) => { setShowSearch(false); setTeamPage(selected); }} />
           ) : (
-            <VaultPage favorites={favorites} leagues={data.leagues} onToggle={toggleTeam} onSelect={setTeamPage} onSearch={() => setShowSearch(true)} />
+          <VaultPage favorites={favorites} teams={data.teams} leagues={data.leagues} savedTeamIds={vault.teamIds} onToggle={toggleTeam} onSelect={setTeamPage} />
           )
         ) : (
-          <CompetitionsPage focusGroup={view} events={data.events} leagues={data.leagues} teams={data.teams} getTeam={team} getLeague={league} onSelectEvent={(event, eventTeams) => { setSelectedEventTeams(eventTeams ?? []); setSelectedEvent(event); }} />
+          <CompetitionsPage focusGroup={view} events={data.events} leagues={data.leagues} teams={data.teams} getTeam={team} getLeague={league} leagueId={competitionTabs[view] ?? null} onLeagueChange={(leagueId) => setCompetitionTabs((current) => ({ ...current, [view]: leagueId }))} onTeam={setTeamPage} onSelectEvent={(event, eventTeams) => { setSelectedEventTeams(eventTeams ?? []); setSelectedEvent(event); }} />
         )}
       </main>
       <AppBottomNav active={view} className="mobile-nav" onNavigate={navigateTo} />

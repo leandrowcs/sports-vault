@@ -4320,3 +4320,164 @@
     padding: 8px;
   }
 }
+.football-team-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  color: var(--vault-ink);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+.football-team-link:hover,
+.football-team-link:focus-visible {
+  color: var(--sport-accent);
+}
+.football-team-link .crest {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+}
+.football-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.football-form-title {
+  margin-right: 4px;
+  color: var(--vault-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.football-form-badge {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #0b1220;
+  font-size: 12px;
+  font-weight: 800;
+}
+.football-form-badge.form-V {
+  background: #4ade80;
+}
+.football-form-badge.form-E {
+  background: #fbbf24;
+}
+.football-form-badge.form-D {
+  background: #fb7185;
+}
+.vault-fab {
+  position: fixed;
+  z-index: 40;
+  right: calc((100vw - var(--vault-mobile-shell-width)) / 2 + 16px);
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--vault-primary);
+  color: var(--vault-on-primary);
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.vault-fab:focus-visible {
+  outline: 3px solid var(--vault-focus);
+  outline-offset: 3px;
+}
+.add-team-backdrop {
+  z-index: 120;
+}
+.add-team-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(520px, 100%);
+  height: min(680px, calc(100svh - 40px));
+  overflow: hidden;
+  outline: 0;
+}
+.add-team-title {
+  margin: 0;
+  padding-right: 36px;
+  font-size: 20px;
+}
+.add-team-tabs {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.add-team-tabs button {
+  flex: 0 0 auto;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+.add-team-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.add-team-group h3 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 6px 4px;
+  background: var(--vault-surface);
+  color: var(--vault-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.add-team-group ul {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.add-team-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 1px solid var(--vault-border);
+  border-radius: var(--vault-radius-control);
+  background: var(--vault-bg);
+  color: var(--vault-ink);
+  text-align: left;
+}
+.add-team-row > span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.add-team-row small {
+  color: var(--vault-muted);
+  font-size: 11px;
+}
+.add-team-row > svg {
+  flex: 0 0 auto;
+  color: var(--vault-muted);
+}
+.add-team-row.saved {
+  border-color: var(--vault-primary);
+}
+.add-team-row.saved > svg {
+  color: var(--vault-primary);
+}
+.add-team-row:focus-visible {
+  outline: 2px solid var(--vault-primary);
+  outline-offset: 2px;
+}

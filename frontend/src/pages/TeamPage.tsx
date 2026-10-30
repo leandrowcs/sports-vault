@@ -4,14 +4,17 @@ import { teamMetrics, sportNames, playerMetrics } from '../helpers/sportStatisti
 import { StatisticsGrid } from '../components/StatisticsGrid';
 import { TeamCrest } from '../components/TeamCrest';
 import { EventCard } from '../components/EventCard';
+import { FootballTeamSeason } from '../components/FootballTeamSeason';
 
 interface Props {
   team: Team; league: League; events: SportEvent[]; players: Player[]; teams: Team[];
   getTeam: (id: string) => Team; saved: boolean; onBack: () => void;
   onToggleFavorite: () => void; onSelectPlayer: (player: Player) => void;
+  onEvent?: (event: SportEvent, eventTeams?: Team[]) => void;
   onOpenGames?: () => void; onOpenVault?: () => void; onOpenSearch?: () => void;
 }
-export function TeamVaultPage({ team, league, events, players, getTeam, saved, onBack, onToggleFavorite, onSelectPlayer }: Props) {
+export function TeamVaultPage({ team, league, events, players, teams, getTeam, saved, onBack, onToggleFavorite, onSelectPlayer, onEvent }: Props) {
+  const hasSeasonView = league.id === 'brasileirao-a' || league.id === 'brasileirao-b';
   const teamEvents = events.filter((event) => event.leagueId === league.id && (event.homeTeamId === team.id || event.awayTeamId === team.id));
   const upcoming = teamEvents.filter((event) => event.status !== 'finished').sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
   const metrics = teamMetrics(league.sport, team, teamEvents);
@@ -48,6 +51,7 @@ export function TeamVaultPage({ team, league, events, players, getTeam, saved, o
         </p>
       </div>
     </section>
+    {hasSeasonView ? <FootballTeamSeason team={team} league={league} teams={teams} onEvent={onEvent} /> : <>
     <section className="team-module">
       <header>
         <h2>Próximo jogo</h2>
@@ -62,6 +66,7 @@ export function TeamVaultPage({ team, league, events, players, getTeam, saved, o
       <p className="statistics-scope">Calculadas apenas dos jogos concluídos com placar disponível nesta competição. O recorte carregado pode não cobrir toda a temporada.</p>
       {metrics.length ? <StatisticsGrid metrics={metrics} /> : <p className="standing-empty">Sem jogos concluídos com placar disponível.</p>}
     </section>
+    </>}
     <section className="team-module">
       <header>
         <h2>Destaques da temporada</h2>

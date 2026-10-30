@@ -1,15 +1,17 @@
 import { useRef, useState } from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Plus } from 'lucide-react';
 import type { League, SportCode, Team } from '../types/sports';
 import { groupTeams } from '../helpers/teamGroups';
 import { sportNames } from '../helpers/sportStatistics';
 import { SportIcon } from "../components/SportIcon";
 import { getSportGroup } from "../helpers/focusGroups";
 import { TeamCard } from '../components/TeamCard';
-export function VaultPage({ favorites, leagues, onToggle, onSelect, onSearch }: { favorites: Team[]; leagues: League[]; onToggle: (id: string) => void; onSelect: (team: Team) => void; onSearch: () => void }) {
+import { AddTeamDialog } from '../components/AddTeamDialog';
+export function VaultPage({ favorites, teams, leagues, savedTeamIds, onToggle, onSelect }: { favorites: Team[]; teams: Team[]; leagues: League[]; savedTeamIds: string[]; onToggle: (id: string) => void; onSelect: (team: Team) => void }) {
   const groups = groupTeams(favorites, leagues);
   const availableSports = [...new Set(groups.map((group) => group.sport))];
   const [sport, setSport] = useState<SportCode | 'all'>('all');
+  const [adding, setAdding] = useState(false);
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const selectedSport = sport === 'all' || availableSports.includes(sport) ? sport : 'all';
   const selectedTabIndex = selectedSport === 'all' ? 0 : availableSports.indexOf(selectedSport) + 1;
@@ -53,7 +55,7 @@ export function VaultPage({ favorites, leagues, onToggle, onSelect, onSearch }: 
       <Heart size={25} />
       <h3>Seu Vault está livre.</h3>
       <p>Salve times para criar uma agenda feita para você.</p>
-      <button className="primary-button" onClick={onSearch}>Explorar times</button>
+      <button className="primary-button" onClick={() => setAdding(true)}>Explorar times</button>
     </div> : <div id="favorites-panel" role="tabpanel" aria-labelledby={`favorites-tab-${selectedTabIndex}`}>
       {filteredGroups.length ? <div className="team-grid">
         {filteredGroups.map(({ team, leagues: competitions }) => <TeamCard key={team.id} team={team} league={competitions.find((league) => league.id === team.leagueId)!} saved onToggle={onToggle} onSelect={onSelect} />)}
@@ -63,5 +65,10 @@ export function VaultPage({ favorites, leagues, onToggle, onSelect, onSearch }: 
         <button className="primary-button" onClick={() => setSport('all')}>Ver todos</button>
       </div>}
     </div>}
+    <button type="button" className="vault-fab" onClick={() => setAdding(true)}>
+      <Plus size={20} aria-hidden="true" />
+      <span>Adicionar time</span>
+    </button>
+    {adding && <AddTeamDialog teams={teams} leagues={leagues} savedTeamIds={savedTeamIds} onToggle={onToggle} onClose={() => setAdding(false)} />}
   </section>;
 }
