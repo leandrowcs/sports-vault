@@ -409,7 +409,7 @@
 .team-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 13px;
+  gap: 10px;
 }
 .team-card {
   position: relative;
@@ -417,9 +417,9 @@
   overflow: hidden;
   background: var(--vault-surface);
   border: 1px solid var(--vault-border);
-  padding: 16px;
+  padding: 10px;
   border-radius: var(--vault-radius-control);
-  min-height: 172px;
+  min-height: 120px;
 }
 .team-card::before {
   content: "";
@@ -461,7 +461,7 @@
 }
 .team-detail-button {
   display: block;
-  margin: 15px 0 3px;
+  margin: 3px 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -960,7 +960,7 @@
 }
 .competition-dot {
   display: block;
-  margin-top: 15px;
+  margin-top: 3px;
   color: var(--vault-muted);
   font-size: 9px;
   white-space: nowrap;
@@ -3422,7 +3422,8 @@
 .competition-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 .competition-filters button {
   display: inline-flex;

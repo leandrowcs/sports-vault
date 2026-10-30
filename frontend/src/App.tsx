@@ -187,6 +187,7 @@ function App() {
   );
   const greeting = user?.displayName?.split(" ")[0] ?? "Leandro";
   const sportHeading = ['nba', 'nfl', 'futebol', 'selecao'].includes(view) && !showSearch;
+  const topbarHeading = sportHeading || (view === "favorites" && !showSearch);
   const initials = (user?.displayName ?? "LD")
     .split(" ")
     .map((name) => name[0])
@@ -231,12 +232,12 @@ function App() {
       </aside>
       <main className="content">
         <div ref={pageHeader} className={stickyNbaHeader ? 'app-page-header nba-sticky-header' : 'app-page-header'}>
-        {!teamPage && !playerPage && <header className={sportHeading ? 'topbar sport-topbar' : 'topbar'}>
+        {!teamPage && !playerPage && <header className={topbarHeading ? 'topbar sport-topbar' : 'topbar'}>
           <button className="brand header-brand" aria-label="Sports Vault — início" onClick={() => navigateTo("home")}>
             <img src="/icon.svg" alt="" width="42" height="42" />
-            <span>Sports <strong>Vault</strong></span>
+            {view !== "favorites" && <span>Sports <strong>Vault</strong></span>}
           </button>
-          {sportHeading && <h1 className="page-heading view-heading" data-sport={view}>
+          {topbarHeading && <h1 className="page-heading view-heading" data-sport={view}>
             <NavigationIcon view={view} size={28} />
             {navigation.find((item) => item.id === view)?.label}
           </h1>}
@@ -263,7 +264,7 @@ function App() {
             <span className="demo-account">Modo local</span>
           )}
         </header>}
-        {!teamPage && !playerPage && !sportHeading && <h1 className="page-heading view-heading" data-sport={view}>
+        {!teamPage && !playerPage && !topbarHeading && <h1 className="page-heading view-heading" data-sport={view}>
           {view !== "home" && !showSearch && <NavigationIcon view={view} size={28} />}
           {showSearch ? "Buscar times" : view === "home" ? `Olá, ${greeting}.` : navigation.find((item) => item.id === view)?.label}
         </h1>}
