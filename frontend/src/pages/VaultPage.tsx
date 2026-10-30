@@ -18,17 +18,21 @@ export function VaultPage({ favorites, leagues, onToggle, onSelect, onSearch }: 
         {groups.length > 0 && <button className="icon-button" aria-label="Buscar times" onClick={onSearch}><Search size={20} /></button>}
       </div>
     </div>
-    {groups.length > 0 && availableSports.length > 1 && <nav className="competition-filters" aria-label="Filtrar por esporte">
+    {groups.length > 0 && <nav className="competition-filters" aria-label="Filtrar por esporte">
       <button aria-pressed={sport === 'all'} onClick={() => setSport('all')}>Todos</button>
       {availableSports.map((code) => <button key={code} data-sport={getSportGroup(code)} aria-pressed={sport === code} onClick={() => setSport(code)}><SportIcon sport={getSportGroup(code)} />{sportNames[code]}</button>)}
     </nav>}
-    {filteredGroups.length ? <div className="team-grid">
-      {filteredGroups.map(({ team, leagues: competitions }) => <TeamCard key={team.id} team={team} league={competitions.find((league) => league.id === team.leagueId)!} saved onToggle={onToggle} onSelect={onSelect} />)}
-    </div> : <div className="empty-state">
+    {groups.length === 0 ? <div className="empty-state">
       <Heart size={25} />
       <h3>Seu Vault está livre.</h3>
       <p>Salve times para criar uma agenda feita para você.</p>
       <button className="primary-button" onClick={onSearch}>Explorar times</button>
+    </div> : filteredGroups.length ? <div className="team-grid">
+      {filteredGroups.map(({ team, leagues: competitions }) => <TeamCard key={team.id} team={team} league={competitions.find((league) => league.id === team.leagueId)!} saved onToggle={onToggle} onSelect={onSelect} />)}
+    </div> : <div className="empty-state">
+      <h3>Nenhum time neste esporte.</h3>
+      <p>Escolha outra aba para ver seus favoritos.</p>
+      <button className="primary-button" onClick={() => setSport('all')}>Ver todos</button>
     </div>}
   </section>;
 }

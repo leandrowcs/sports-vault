@@ -412,11 +412,26 @@
   gap: 13px;
 }
 .team-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: var(--vault-surface);
   border: 1px solid var(--vault-border);
   padding: 16px;
   border-radius: var(--vault-radius-control);
   min-height: 172px;
+}
+.team-card::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -18px;
+  right: -18px;
+  width: 116px;
+  height: 116px;
+  background: var(--sport-ball) center / contain no-repeat;
+  opacity: 0.13;
+  pointer-events: none;
 }
 .team-card-top {
   display: flex;
@@ -429,6 +444,8 @@
   border-radius: 50%;
 }
 .heart {
+  position: relative;
+  z-index: 2;
   border: 0;
   color: #64748b;
   background: transparent;
@@ -452,6 +469,17 @@
   font-size: 13px;
   font-weight: 700;
   text-align: left;
+}
+.team-detail-button::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: var(--vault-radius-control);
+}
+.team-detail-button:focus-visible::after {
+  outline: 2px solid var(--vault-primary);
+  outline-offset: -3px;
 }
 .selectable {
   cursor: pointer;

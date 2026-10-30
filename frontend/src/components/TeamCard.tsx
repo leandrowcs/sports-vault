@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 import { TeamCrest } from "./TeamCrest";
+import { getSportGroup } from "../helpers/focusGroups";
 import type { League, Team } from "../types/sports";
 export function TeamCard({
   team,
@@ -15,7 +16,7 @@ export function TeamCard({
   onSelect: (team: Team) => void;
 }) {
   return (
-    <article className="team-card">
+    <article className="team-card" data-sport={getSportGroup(league.sport)}>
       <div className="team-card-top">
         <TeamCrest team={team} />
         <button
