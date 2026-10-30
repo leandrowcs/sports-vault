@@ -3450,6 +3450,7 @@
   min-width: 0;
   border-bottom: 1px solid var(--vault-border);
   background: var(--vault-bg);
+  margin-bottom: 6px;
 }
 .competition-tabs button {
   display: flex;
@@ -4337,10 +4338,50 @@
 .football-team-link:focus-visible {
   color: var(--sport-accent);
 }
+.football-team-link {
+  max-width: 100%;
+  min-width: 0;
+}
+.football-team-link span:not(.crest) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .football-team-link .crest {
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 0;
+}
+.football-standings {
+  table-layout: fixed;
+}
+.football-standings th:first-child {
+  width: 36px;
+}
+.football-standings th:nth-child(n + 3) {
+  width: 34px;
+}
+.football-standings th:nth-child(3) {
+  width: 38px;
+}
+.football-standings th,
+.football-standings td {
+  padding-inline: 4px;
+}
+.football-standings tbody th {
+  min-width: 0;
+  padding-inline: 2px;
+}
+.add-team-row .crest {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.add-team-row[data-football] .crest {
+  border-radius: 0;
 }
 .football-form {
   display: flex;

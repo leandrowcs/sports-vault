@@ -126,6 +126,7 @@ export function AddTeamDialog({ teams, leagues, savedTeamIds, onToggle, onClose 
                           <button
                             type="button"
                             className={saved ? "add-team-row saved" : "add-team-row"}
+                            data-football={team.leagueId !== "nba" && team.leagueId !== "nfl" ? "" : undefined}
                             aria-pressed={saved}
                             aria-label={saved ? `Remover ${team.name} dos favoritos` : `Adicionar ${team.name} aos favoritos`}
                             onClick={() => onToggle(team.id)}
