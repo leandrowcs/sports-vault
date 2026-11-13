@@ -33,7 +33,7 @@ Antes de começar a temporada regular, classificação e médias podem estar vaz
 | `nba-week` | `year`, `date=YYYY-MM-DD` (primeiro dia da semana) |
 | `nba-team` | `year`, `id` ESPN numérico |
 | `nba-game` | `id` ESPN numérico |
-| `nba-mvp` | — (corrida ao MVP, Basketball-Reference) |
+| `nba-mvp` | — (corrida ao MVP, odds da ESPN) |
 
 O servidor aceita a temporada vigente e a anterior para consultas de temporada. IDs e datas são validados. Consultas ESPN são compartilhadas por até 60 segundos. Calendário vigente e partidas não encerradas são atualizados a cada minuto enquanto a tela está ativa.
 
@@ -45,7 +45,7 @@ Os dados vêm de `seasons/{year}/types/2/leaders` e das estatísticas sazonais i
 
 ## Corrida ao MVP
 
-A seção aparece após os líderes, apenas na temporada vigente. Os dados (top 25) vêm da página `basketball-reference.com/friv/mvp.html`, lida no servidor por `nbaMvpRace` e normalizada por `normalizeMvpRace`, que procura a tabela com a coluna "Player" (inclusive em comentários HTML). Se a página mudar ou ficar indisponível, a seção mostra erro sem afetar o restante da tela. A ESPN não publica essa classificação; a tela contém um link para a Kia MVP Ladder da NBA, cujos dados não são extraídos.
+A seção aparece após os líderes, apenas na temporada vigente. Os dados (top 25, por odds de apostas) vêm do endpoint `futures` da ESPN, lido no servidor por `nbaMvpRace` e normalizado por `normalizeMvpRace`. Se o mercado de MVP não existir ou ficar indisponível, a seção mostra erro sem afetar o restante da tela. A tela também contém um link para a Kia MVP Ladder da NBA, cujos dados não são extraídos.
 
 ## Validação
 

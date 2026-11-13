@@ -9,7 +9,7 @@ export function NbaMvpRace() {
   return <section className="team-module nba-mvp" aria-labelledby="nba-mvp-title">
     <header><h2 id="nba-mvp-title">Corrida ao MVP</h2></header>
     <p className="statistics-scope">
-      Dados do Basketball-Reference (top 25). Veja também a <a href="https://www.nba.com/news/kia-mvp-ladder" target="_blank" rel="noreferrer">Kia MVP Ladder</a> da NBA.
+      Favoritos segundo as odds da ESPN (top 25). Veja também a <a href="https://www.nba.com/news/kia-mvp-ladder" target="_blank" rel="noreferrer">Kia MVP Ladder</a> da NBA.
     </p>
     <NbaQueryState query={race} />
     {data && (data.rows.length ? <div className="nba-table-scroll nba-leaders-scroll" role="region" aria-label="Corrida ao MVP" tabIndex={0}>
