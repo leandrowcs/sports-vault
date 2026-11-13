@@ -33,6 +33,7 @@ Antes de começar a temporada regular, classificação e médias podem estar vaz
 | `nba-week` | `year`, `date=YYYY-MM-DD` (primeiro dia da semana) |
 | `nba-team` | `year`, `id` ESPN numérico |
 | `nba-game` | `id` ESPN numérico |
+| `nba-mvp` | — (corrida ao MVP, Basketball-Reference) |
 
 O servidor aceita a temporada vigente e a anterior para consultas de temporada. IDs e datas são validados. Consultas ESPN são compartilhadas por até 60 segundos. Calendário vigente e partidas não encerradas são atualizados a cada minuto enquanto a tela está ativa.
 
@@ -42,7 +43,9 @@ A seção aparece após o calendário/resultados e antes da lista de equipes. As
 
 Os dados vêm de `seasons/{year}/types/2/leaders` e das estatísticas sazonais individuais da API Core ESPN, limitados ao ano selecionado e à temporada regular. Identidades de atletas e equipes são carregadas pelos respectivos IDs sazonais. Dados ausentes não são preenchidos com estatísticas históricas ou de outra temporada. Quando a categoria ainda não tem líderes publicados, a tabela informa indisponibilidade e preserva as demais áreas da página.
 
-A API disponível não publica uma classificação atual de candidatos ao MVP; a tela não apresenta uma projeção própria como se fosse uma corrida oficial.
+## Corrida ao MVP
+
+A seção aparece após os líderes, apenas na temporada vigente. Os dados (top 25) vêm da página `basketball-reference.com/friv/mvp.html`, lida no servidor por `nbaMvpRace` e normalizada por `normalizeMvpRace`, que procura a tabela com a coluna "Player" (inclusive em comentários HTML). Se a página mudar ou ficar indisponível, a seção mostra erro sem afetar o restante da tela. A ESPN não publica essa classificação; a tela contém um link para a Kia MVP Ladder da NBA, cujos dados não são extraídos.
 
 ## Validação
 

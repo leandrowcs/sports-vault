@@ -13,6 +13,12 @@ export interface NbaLeader {
   value: string;
   totalValue?: string;
 }
+export interface NbaMvpRace {
+  columns: string[];
+  playerIndex: number;
+  rows: string[][];
+  source: string;
+}
 export interface NbaFinalSeries {
   id: string;
   label: string;

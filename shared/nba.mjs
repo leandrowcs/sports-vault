@@ -290,3 +290,34 @@ export async function nbaFinals(year) {
     read(`${SITE}/teams/${team.espnTeamId}/schedule?season=${year}&seasontype=3`)));
   return normalizeNbaFinals({ events: schedules.flatMap((schedule) => schedule.events ?? []) }, year);
 }
+
+const MVP_URL = 'https://www.basketball-reference.com/friv/mvp.html';
+const decodeHtml = (value) => value.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+  .replace(/&#x27;|&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+
+export function normalizeMvpRace(html) {
+  const tables = [...html.replace(/<!--|-->/g, '').matchAll(/<table\b[\s\S]*?<\/table>/gi)].map((match) => match[0]);
+  for (const table of tables) {
+    const head = table.match(/<thead\b[\s\S]*?<\/thead>/i)?.[0];
+    const body = table.match(/<tbody\b[\s\S]*?<\/tbody>/i)?.[0];
+    if (!head || !body) continue;
+    const headerRow = [...head.matchAll(/<tr\b[\s\S]*?<\/tr>/gi)].map((m) => m[0]).at(-1) ?? '';
+    const columns = [...headerRow.matchAll(/<th\b([^>]*)>([\s\S]*?)<\/th>/gi)]
+      .map((m) => ({ key: m[1].match(/data-stat="([^"]+)"/)?.[1] ?? '', label: decodeHtml(m[2]) }));
+    const playerIndex = columns.findIndex((column) => /player/i.test(column.key) || /^player$/i.test(column.label));
+    if (playerIndex < 0) continue;
+    const rows = [...body.matchAll(/<tr\b(?![^>]*class="[^"]*thead)[^>]*>([\s\S]*?)<\/tr>/gi)]
+      .map((m) => [...m[1].matchAll(/<t[hd]\b[^>]*>([\s\S]*?)<\/t[hd]>/gi)].map((cell) => decodeHtml(cell[1])))
+      .filter((cells) => cells[playerIndex]).slice(0, 25);
+    if (rows.length) return { columns: columns.map((column) => column.label || column.key), playerIndex, rows, source: MVP_URL };
+  }
+  return null;
+}
+
+export async function nbaMvpRace() {
+  const response = await fetch(MVP_URL, { headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0 (compatible; SportsVault/1.0)' }, signal: AbortSignal.timeout(12000) });
+  if (!response.ok) throw new Error('Corrida ao MVP indisponível.');
+  const race = normalizeMvpRace(await response.text());
+  if (!race) throw new Error('Corrida ao MVP indisponível.');
+  return race;
+}
