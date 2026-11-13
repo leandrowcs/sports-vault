@@ -56,7 +56,8 @@ module.exports = async function handler(request, response) {
         return;
       }
       let payload;
-      if (type === 'nba-season') payload = season;
+      if (type === 'nba-mvp') payload = await nba.nbaMvpRace();
+      else if (type === 'nba-season') payload = season;
       else if (type === 'nba-teams') payload = await nba.nbaTeams();
       else if (type === 'nba-team-conferences') payload = await nba.nbaTeamConferences();
       else if (type === 'nba-last-game') payload = await nba.nbaLastGameDate(year);

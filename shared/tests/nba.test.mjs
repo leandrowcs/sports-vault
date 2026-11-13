@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { nbaCalendar, nbaEvent, nbaLastGameDate, nbaLeaders, nbaTeamConferences, nbaTeamSeason, normalizeNbaGame, normalizeNbaLeaders, normalizeStandings } from '../nba.mjs';
+import { nbaCalendar, nbaEvent, nbaLastGameDate, nbaLeaders, nbaTeamConferences, nbaTeamSeason, normalizeNbaGame, normalizeNbaLeaders, normalizeStandings, normalizeMvpRace } from '../nba.mjs';
+
+test('MVP race parser reads commented tables and rejects pages without a player table', () => {
+  const html = '<!--<table><thead><tr><th data-stat="ranker">Rk</th><th data-stat="player">Player</th><th data-stat="pts">PTS</th></tr></thead><tbody><tr><th>1</th><td><a>Nikola Jokić</a></td><td>26.1</td></tr></tbody></table>-->';
+  const race = normalizeMvpRace(html);
+  assert.deepEqual(race.columns, ['Rk', 'Player', 'PTS']);
+  assert.deepEqual(race.rows, [['1', 'Nikola Jokić', '26.1']]);
+  assert.equal(normalizeMvpRace('<p>vazio</p>'), null);
+});
 
 test('previous season date skips unplayed fixtures and uses the local game date', async (t) => {
   t.mock.method(globalThis, 'fetch', async (input) => {
